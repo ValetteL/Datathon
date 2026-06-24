@@ -3,6 +3,8 @@ import json
 import os
 import uuid
 import pandas as pd
+from dotenv import load_dotenv
+load_dotenv()
 from langgraph.graph import StateGraph, END
 from langgraph.types import interrupt
 from pipeline.state import CrisisState

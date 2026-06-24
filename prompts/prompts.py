@@ -48,24 +48,24 @@ def get_system_prompt(agent_name: str) -> str:
 
 
 def get_llm(
-    model: str = "gemini-2.0-flash",
+    model: str | None = None,
     temperature: float = 0.2,
 ) -> ChatGoogleGenerativeAI:
     """
     Factory LLM unique — tous les agents passent par ici.
+    Modèle résolu dans cet ordre : argument > GEMINI_MODEL (.env) > gemini-2.0-flash.
     Clé lue depuis GOOGLE_API_KEY (variable d'environnement ou Colab Secrets).
-
-    Quota Gemini 2.0 Flash Free : ~1 500 req/min — suffisant pour le datathon.
     """
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         raise EnvironmentError(
             "GOOGLE_API_KEY non définie.\n"
-            "Sur Colab : from google.colab import userdata; "
-            "import os; os.environ['GOOGLE_API_KEY'] = userdata.get('GOOGLE_API_KEY')"
+            "Local : créer un fichier .env avec GOOGLE_API_KEY=ta_clé\n"
+            "Colab  : Secrets > GOOGLE_API_KEY, puis load_dotenv() ou userdata.get()"
         )
+    resolved_model = model or os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
     return ChatGoogleGenerativeAI(
-        model=model,
+        model=resolved_model,
         temperature=temperature,
         google_api_key=api_key,
     )
