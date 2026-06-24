@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Affaire CNC × Ultia — Analyse de crise virale</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: #f1f5f9;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Slides ── */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* ── Progress bar ── */
+  #progress {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 3px;
+    background: #3b82f6;
+    transition: width 0.3s ease;
+    z-index: 99;
+  }
+
+  /* ── Slide counter ── */
+  #counter {
+    position: fixed;
+    bottom: 16px; right: 24px;
+    font-size: 13px;
+    color: #475569;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Nav arrows ── */
+  .nav-btn {
+    position: fixed;
+    top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.05);
+    border: none;
+    color: #64748b;
+    font-size: 28px;
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 99;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); color: #f1f5f9; }
+  #btn-prev { left: 16px; }
+  #btn-next { right: 16px; }
+
+  /* ── Typography ── */
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #3b82f6;
+    margin-bottom: 20px;
+  }
+  h1 { font-size: clamp(36px, 5vw, 64px); font-weight: 800; line-height: 1.1; }
+  h2 { font-size: clamp(28px, 3.5vw, 48px); font-weight: 700; line-height: 1.15; }
+  h3 { font-size: 20px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; }
+
+  .accent { color: #3b82f6; }
+  .warn   { color: #f59e0b; }
+  .muted  { color: #64748b; }
+  .todo   { color: #94a3b8; font-style: italic; }
+
+  /* ── Slide 1 — Titre ── */
+  #s1 { text-align: center; }
+  #s1 .subtitle {
+    margin-top: 24px;
+    font-size: 22px;
+    color: #94a3b8;
+    font-weight: 400;
+  }
+  #s1 .meta {
+    margin-top: 48px;
+    font-size: 14px;
+    color: #475569;
+    letter-spacing: 0.08em;
+  }
+  #s1 .pill {
+    display: inline-block;
+    margin-top: 32px;
+    padding: 8px 20px;
+    border: 1px solid #1e3a5f;
+    border-radius: 999px;
+    font-size: 13px;
+    color: #3b82f6;
+  }
+
+  /* ── Slide 2 — Le cas ── */
+  #s2 { align-items: flex-start; max-width: 960px; margin: 0 auto; width: 100%; }
+  .timeline {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+  }
+  .tl-item {
+    display: grid;
+    grid-template-columns: 120px 1px 1fr;
+    gap: 0 20px;
+    align-items: start;
+  }
+  .tl-date {
+    font-size: 13px;
+    font-weight: 600;
+    color: #3b82f6;
+    padding: 14px 0;
+    text-align: right;
+  }
+  .tl-line-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .tl-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #3b82f6;
+    margin-top: 18px;
+    flex-shrink: 0;
+  }
+  .tl-line { flex: 1; width: 1px; background: #1e293b; }
+  .tl-item:last-child .tl-line { display: none; }
+  .tl-content { padding: 12px 0 20px; }
+  .tl-content strong { font-size: 16px; display: block; margin-bottom: 4px; }
+  .tl-content span { font-size: 14px; color: #94a3b8; }
+
+  /* ── Slide 3 — Chiffres ── */
+  #s3 { text-align: center; }
+  .stats-row {
+    display: flex;
+    gap: 48px;
+    margin-top: 56px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .stat-num {
+    font-size: clamp(52px, 7vw, 88px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .stat-label {
+    font-size: 15px;
+    color: #64748b;
+    max-width: 180px;
+    line-height: 1.4;
+  }
+  .stat-sub {
+    font-size: 13px;
+    color: #475569;
+    margin-top: 4px;
+  }
+  .divider-v {
+    width: 1px;
+    background: #1e293b;
+    align-self: stretch;
+    margin: 8px 0;
+  }
+
+  /* ── Slide 4 — Grille 5 axes ── */
+  #s4 { align-items: flex-start; max-width: 1100px; margin: 0 auto; width: 100%; }
+  .grid-5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+    width: 100%;
+  }
+  .axis-card {
+    background: #0f1f38;
+    border: 1px solid #1e3a5f;
+    border-radius: 10px;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 200px;
+  }
+  .axis-icon { font-size: 24px; }
+  .axis-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3b82f6;
+  }
+  .axis-resp {
+    font-size: 11px;
+    color: #475569;
+    margin-top: -4px;
+  }
+  .axis-body { font-size: 13px; color: #94a3b8; line-height: 1.5; flex: 1; }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #1e3a5f;
+    color: #60a5fa;
+    align-self: flex-start;
+  }
+
+  /* ── Slide 5 — Pipeline ── */
+  #s5 { align-items: flex-start; max-width: 960px; margin: 0 auto; width: 100%; }
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-top: 40px;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .pipe-node {
+    flex: 1;
+    min-width: 120px;
+    background: #0f1f38;
+    border: 1px solid #1e3a5f;
+    border-radius: 8px;
+    padding: 16px 12px;
+    text-align: center;
+    position: relative;
+  }
+  .pipe-node .pipe-icon { font-size: 22px; }
+  .pipe-node .pipe-name { font-size: 12px; font-weight: 700; margin-top: 8px; color: #e2e8f0; }
+  .pipe-node .pipe-out  { font-size: 11px; color: #475569; margin-top: 6px; line-height: 1.3; }
+  .pipe-node.done  { border-color: #16a34a; }
+  .pipe-node.done .pipe-name { color: #4ade80; }
+  .pipe-node.gate  { border-color: #f59e0b; background: #1c1505; }
+  .pipe-arrow {
+    display: flex; align-items: center;
+    color: #334155; font-size: 18px;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+  .badge {
+    position: absolute;
+    top: -10px; right: -10px;
+    background: #16a34a;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+  }
+  .pipe-caption {
+    margin-top: 28px;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  /* ── Slide 6 — Généricité ── */
+  #s6 { text-align: center; max-width: 800px; margin: 0 auto; width: 100%; }
+  .code-block {
+    margin-top: 36px;
+    background: #0a0f1e;
+    border: 1px solid #1e3a5f;
+    border-radius: 10px;
+    padding: 24px 32px;
+    text-align: left;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .code-block .kw  { color: #818cf8; }
+  .code-block .str { color: #34d399; }
+  .code-block .var { color: #f1f5f9; }
+  .code-block .cmt { color: #475569; }
+  .code-block .hi  { color: #f59e0b; }
+  .examples {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .ex-pill {
+    padding: 8px 18px;
+    border-radius: 999px;
+    border: 1px solid #1e3a5f;
+    font-size: 14px;
+    color: #94a3b8;
+  }
+  .ex-pill.active { border-color: #3b82f6; color: #60a5fa; }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- ── Slide 1 : Titre ─────────────────────────────────────── -->
+  <div class="slide active" id="s1">
+    <div class="eyebrow">Datathon NEXA Digital School 2026</div>
+    <h1>Affaire <span class="accent">CNC × Ultia</span></h1>
+    <p class="subtitle">Comprendre, détecter et répondre à une crise virale sur X</p>
+    <span class="pill">35 396 tweets · mars – mai 2026</span>
+    <p class="meta">Équipe P1-P6 &nbsp;·&nbsp; 24 juin 2026</p>
+  </div>
+
+  <!-- ── Slide 2 : Le cas ────────────────────────────────────── -->
+  <div class="slide" id="s2">
+    <div class="eyebrow">Contexte</div>
+    <h2>Une crise en <span class="accent">4 actes</span></h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-date">Mars 2026</div>
+        <div class="tl-line-wrap"><div class="tl-dot"></div><div class="tl-line"></div></div>
+        <div class="tl-content">
+          <strong>Le déclencheur</strong>
+          <span>Ultia déclare en live Twitch vouloir favoriser ses proches et écarter les projets d'extrême droite en tant que jurée CNC</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">27 mars</div>
+        <div class="tl-line-wrap"><div class="tl-dot" style="background:#f59e0b"></div><div class="tl-line"></div></div>
+        <div class="tl-content">
+          <strong><span class="warn">Pic : 7 303 tweets en 24h</span></strong>
+          <span>Le CNC publie un tweet la destituant immédiatement — la cascade démarre</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Semaine suivante</div>
+        <div class="tl-line-wrap"><div class="tl-dot" style="background:#ef4444"></div><div class="tl-line"></div></div>
+        <div class="tl-content">
+          <strong>Amplification médiatique</strong>
+          <span>Médias reprennent, accusations de cyberharcèlement, menaces signalées</span>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Avril 2026</div>
+        <div class="tl-line-wrap"><div class="tl-dot" style="background:#64748b"></div><div class="tl-line"></div></div>
+        <div class="tl-content">
+          <strong>Suspension de la commission</strong>
+          <span>Programme d'aide de 3M€ suspendu sous pression — corpus s'éteint progressivement</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 3 : Chiffres ──────────────────────────────────── -->
+  <div class="slide" id="s3">
+    <div class="eyebrow">Le corpus</div>
+    <h2>3 chiffres pour <span class="accent">cadrer la crise</span></h2>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num accent">35 396</div>
+        <div class="stat-label">tweets collectés</div>
+        <div class="stat-sub">19 mars → 1<sup>er</sup> mai 2026</div>
+      </div>
+      <div class="divider-v"></div>
+      <div class="stat-card">
+        <div class="stat-num warn">7 303</div>
+        <div class="stat-label">tweets en un seul jour</div>
+        <div class="stat-sub">Pic le 27 mars 2026</div>
+      </div>
+      <div class="divider-v"></div>
+      <div class="stat-card">
+        <div class="stat-num todo" id="pct-rt">—%</div>
+        <div class="stat-label">de retweets</div>
+        <div class="stat-sub todo">vitesse d'amplification (P1, J1)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide 4 : Grille 5 axes ─────────────────────────────── -->
+  <div class="slide" id="s4">
+    <div class="eyebrow">Analyse J1</div>
+    <h2>Grille des <span class="accent">5 axes</span></h2>
+    <div class="grid-5">
+
+      <div class="axis-card">
+        <div class="axis-icon">👤</div>
+        <div class="axis-title">Acteurs</div>
+        <div class="axis-resp">P3</div>
+        <div class="axis-body todo">À compléter — top comptes, types (média / influenceur / institution / militant), tweets seeds</div>
+        <span class="tag">EN COURS</span>
+      </div>
+
+      <div class="axis-card">
+        <div class="axis-icon">💬</div>
+        <div class="axis-title">Narratifs</div>
+        <div class="axis-resp">P2</div>
+        <div class="axis-body">
+          Narratifs pressentis :<br>
+          · Censure institutionnelle<br>
+          · Copinage / favoritisme<br>
+          · Cyberharcèlement<br>
+          · Soutien Ultia / CNC
+        </div>
+        <span class="tag">EN COURS</span>
+      </div>
+
+      <div class="axis-card">
+        <div class="axis-icon">📡</div>
+        <div class="axis-title">Propagation</div>
+        <div class="axis-resp">P1</div>
+        <div class="axis-body">
+          Pic : 27 mars<br>
+          7 303 tweets/jour<br><br>
+          <span class="todo">RT ratio & vitesse à compléter</span>
+        </div>
+        <span class="tag">EN COURS</span>
+      </div>
+
+      <div class="axis-card">
+        <div class="axis-icon">🔗</div>
+        <div class="axis-title">Coordination</div>
+        <div class="axis-resp">P4</div>
+        <div class="axis-body todo">À compléter — synchronie, rafales, copier-coller, comptes récents</div>
+        <span class="tag">EN COURS</span>
+      </div>
+
+      <div class="axis-card">
+        <div class="axis-icon">🎭</div>
+        <div class="axis-title">Sémantique</div>
+        <div class="axis-resp">P2</div>
+        <div class="axis-body todo">À compléter — vocabulaire dominant, glissements de ton, montée en agressivité</div>
+        <span class="tag">EN COURS</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Slide 5 : Pipeline ──────────────────────────────────── -->
+  <div class="slide" id="s5">
+    <div class="eyebrow">Notre solution</div>
+    <h2>Un pipeline <span class="accent">multi-agents</span> bout en bout</h2>
+    <div class="pipeline">
+      <div class="pipe-node done">
+        <span class="badge">✓</span>
+        <div class="pipe-icon">📥</div>
+        <div class="pipe-name">Corpus</div>
+        <div class="pipe-out">35 396 tweets nettoyés</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node">
+        <div class="pipe-icon">🔍</div>
+        <div class="pipe-name">Analyste</div>
+        <div class="pipe-out">Narratifs · Acteurs</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node done">
+        <span class="badge">✓</span>
+        <div class="pipe-icon">📡</div>
+        <div class="pipe-name">Veille</div>
+        <div class="pipe-out">Alertes · Pics</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node gate">
+        <div class="pipe-icon">🧑‍⚖️</div>
+        <div class="pipe-name">Validation humaine</div>
+        <div class="pipe-out">L'équipe approuve</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node">
+        <div class="pipe-icon">🧭</div>
+        <div class="pipe-name">Stratège</div>
+        <div class="pipe-out">3 options de réponse</div>
+      </div>
+      <div class="pipe-arrow">›</div>
+      <div class="pipe-node">
+        <div class="pipe-icon">✍️</div>
+        <div class="pipe-name">Rédacteur</div>
+        <div class="pipe-out">Drafts prêts à valider</div>
+      </div>
+    </div>
+    <p class="pipe-caption">
+      ✅ = déjà implémenté &nbsp;·&nbsp;
+      <span style="color:#f59e0b">■</span> = validation humaine obligatoire (jamais de communication automatique) &nbsp;·&nbsp;
+      Orchestration : LangGraph StateGraph
+    </p>
+  </div>
+
+  <!-- ── Slide 6 : Généricité ────────────────────────────────── -->
+  <div class="slide" id="s6">
+    <div class="eyebrow">Scalabilité</div>
+    <h2>Demain c'est <span class="warn">Coca-Cola</span> ?</h2>
+    <div class="code-block">
+      <span class="var">corpus_config</span> <span class="kw">=</span> {<br>
+      &nbsp;&nbsp;<span class="str">"evenement"</span>: <span class="hi">"Nouvelle crise"</span>,&nbsp;&nbsp;<span class="cmt"># ← seul ce param change</span><br>
+      &nbsp;&nbsp;<span class="str">"periode"</span>: <span class="str">"2026-01-01 / 2026-02-28"</span>,<br>
+      &nbsp;&nbsp;<span class="str">"mots_cles"</span>: [<span class="str">"coca"</span>, <span class="str">"boycott"</span>, <span class="str">"..."</span>],<br>
+      }<br>
+      <span class="cmt"># Le pipeline tourne tel quel.</span>
+    </div>
+    <div class="examples">
+      <span class="ex-pill active">Affaire Ultia × CNC ✓</span>
+      <span class="ex-pill">Scandale marque</span>
+      <span class="ex-pill">Polémique politique</span>
+      <span class="ex-pill">Désinformation virale</span>
+      <span class="ex-pill">Crise institutionnelle</span>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<div id="progress"></div>
+<div id="counter"></div>
+<button class="nav-btn" id="btn-prev">‹</button>
+<button class="nav-btn" id="btn-next">›</button>
+
+<script>
+  const slides  = document.querySelectorAll('.slide');
+  const progress = document.getElementById('progress');
+  const counter  = document.getElementById('counter');
+  let current = 0;
+
+  function go(n) {
+    slides[current].classList.remove('active');
+    current = (n + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    const pct = ((current + 1) / slides.length * 100).toFixed(1);
+    progress.style.width = pct + '%';
+    counter.textContent  = (current + 1) + ' / ' + slides.length;
+  }
+
+  document.getElementById('btn-prev').onclick = () => go(current - 1);
+  document.getElementById('btn-next').onclick = () => go(current + 1);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') go(current + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     go(current - 1);
+  });
+
+  go(0);
+</script>
+</body>
+</html>
