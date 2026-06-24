@@ -15,6 +15,57 @@ Plutôt que de simplement "demander à l'IA de faire quelque chose", BMAD impose
 
 ---
 
+## Installation de BMAD (à faire une fois par poste)
+
+### Prérequis
+
+- **Node.js ≥ 18** installé ([nodejs.org](https://nodejs.org)) — pour `npx`
+- **Claude Code** (CLI ou extension VS Code) — ou Cursor / Windsurf selon ton IDE
+
+### Commande d'installation
+
+Dans le dossier racine du projet cloné :
+
+```bash
+npx bmad-method install
+```
+
+L'installateur est interactif. Il te demande :
+
+1. **Quel agent / IDE tu utilises** — choisis selon ton setup :
+
+   | IDE / Agent | Choisir dans l'installateur | Skills installés dans |
+   |---|---|---|
+   | **Claude Code** (CLI ou VS Code) | `Claude Code` | `.claude/skills/` |
+   | **Cursor** | `Cursor` | `.cursor/rules/` |
+   | **Windsurf** | `Windsurf` | `.windsurf/rules/` |
+   | **Autre / générique** | `Generic Agent` | `.agent/skills/` |
+
+2. **Langue de communication** — tape `French` pour travailler en français avec l'agent
+
+3. **Nom du projet** — tape `Datathon CNC Ultia`
+
+L'installateur écrit ensuite `_bmad/` (scripts internes) et le dossier de skills adapté à ton IDE. Ces dossiers sont **gitignorés** — chaque membre les regénère sur son poste.
+
+### Vérifier que l'installation a fonctionné
+
+**Sur Claude Code :** ouvre le projet dans le terminal ou VS Code, lance `claude`, puis tape `/bmad-brainstorming` — tu dois voir le skill s'activer.
+
+**Sur Cursor / Windsurf :** ouvre le projet, les skills apparaissent dans les règles de l'agent (les `@` rules). Tape `/bmad-` dans le chat pour voir les complétions.
+
+### Config du projet (déjà faite, ne pas retoucher)
+
+Le fichier `_bmad/core/config.yaml` (regénéré à l'install) est déjà configuré pour ce projet avec la version **6.9.0**. Si tu veux changer la langue ou le nom du projet après install, édite directement :
+
+```yaml
+# _bmad/core/config.yaml
+user_name: Ton Prénom
+communication_language: French
+document_output_language: French
+```
+
+---
+
 ## Ce qui a déjà été fait avec BMAD
 
 ### 1. Brainstorming — 115 idées générées
@@ -183,4 +234,3 @@ Le corpus a des particularités importantes documentées dans `tools/corpus_load
 - Architecture : voir `_bmad-output/architecture/.../PROJET-ARCHITECTURE.md`
 - Décisions techniques : voir `_bmad-output/architecture/.../ARCHITECTURE-SPINE.md`
 - Toutes les idées explorées : voir `_bmad-output/brainstorming/.../brainstorm.html`
-- Chef de projet : Louis
