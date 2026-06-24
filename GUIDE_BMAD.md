@@ -203,7 +203,7 @@ export GOOGLE_API_KEY="ta_cle_ici"
 # os.environ['GOOGLE_API_KEY'] = userdata.get('GOOGLE_API_KEY')
 
 # 5. Obtenir les données
-# Télécharger Dataset/ depuis Google Drive (lien partagé par Louis)
+# Télécharger Dataset/ depuis Teams
 # Placer data.xlsx et dictionnaire_bdd.xlsx dans Dataset/
 
 # 6. Vérifier que tout fonctionne
