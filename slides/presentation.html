@@ -328,7 +328,7 @@
     <h1>Affaire <span class="accent">CNC × Ultia</span></h1>
     <p class="subtitle">Comprendre, détecter et répondre à une crise virale sur X</p>
     <span class="pill">35 396 tweets · mars – mai 2026</span>
-    <p class="meta">Équipe P1-P6 &nbsp;·&nbsp; 24 juin 2026</p>
+    <p class="meta">Alexis · Franck · Ruben · Malo · Baptiste · Louis &nbsp;·&nbsp; 24 juin 2026</p>
   </div>
 
   <!-- ── Slide 2 : Le cas ────────────────────────────────────── -->
@@ -405,7 +405,7 @@
       <div class="axis-card">
         <div class="axis-icon">👤</div>
         <div class="axis-title">Acteurs</div>
-        <div class="axis-resp">P3</div>
+        <div class="axis-resp">Ruben</div>
         <div class="axis-body todo">À compléter — top comptes, types (média / influenceur / institution / militant), tweets seeds</div>
         <span class="tag">EN COURS</span>
       </div>
@@ -413,7 +413,7 @@
       <div class="axis-card">
         <div class="axis-icon">💬</div>
         <div class="axis-title">Narratifs</div>
-        <div class="axis-resp">P2</div>
+        <div class="axis-resp">Franck</div>
         <div class="axis-body">
           Narratifs pressentis :<br>
           · Censure institutionnelle<br>
@@ -427,7 +427,7 @@
       <div class="axis-card">
         <div class="axis-icon">📡</div>
         <div class="axis-title">Propagation</div>
-        <div class="axis-resp">P1</div>
+        <div class="axis-resp">Alexis</div>
         <div class="axis-body">
           Pic : 27 mars<br>
           7 303 tweets/jour<br><br>
@@ -439,7 +439,7 @@
       <div class="axis-card">
         <div class="axis-icon">🔗</div>
         <div class="axis-title">Coordination</div>
-        <div class="axis-resp">P4</div>
+        <div class="axis-resp">Malo</div>
         <div class="axis-body todo">À compléter — synchronie, rafales, copier-coller, comptes récents</div>
         <span class="tag">EN COURS</span>
       </div>
@@ -447,7 +447,7 @@
       <div class="axis-card">
         <div class="axis-icon">🎭</div>
         <div class="axis-title">Sémantique</div>
-        <div class="axis-resp">P2</div>
+        <div class="axis-resp">Franck</div>
         <div class="axis-body todo">À compléter — vocabulaire dominant, glissements de ton, montée en agressivité</div>
         <span class="tag">EN COURS</span>
       </div>
@@ -551,9 +551,30 @@
 
   document.getElementById('btn-prev').onclick = () => go(current - 1);
   document.getElementById('btn-next').onclick = () => go(current + 1);
+
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') go(current + 1);
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                     go(current - 1);
+  });
+
+  // Scroll wheel navigation (throttled)
+  let scrollLock = false;
+  document.addEventListener('wheel', e => {
+    if (scrollLock) return;
+    scrollLock = true;
+    if (e.deltaY > 0) go(current + 1);
+    else              go(current - 1);
+    setTimeout(() => { scrollLock = false; }, 600);
+  }, { passive: true });
+
+  // Touch / swipe
+  let touchY = null;
+  document.addEventListener('touchstart', e => { touchY = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend',   e => {
+    if (touchY === null) return;
+    const dy = touchY - e.changedTouches[0].clientY;
+    if (Math.abs(dy) > 40) go(dy > 0 ? current + 1 : current - 1);
+    touchY = null;
   });
 
   go(0);
