@@ -1,6 +1,6 @@
 # Rapport J1 — Comprendre la crise CNC × Ultia
 
-> Datathon NEXA Digital School 2026 — Équipe : Alexis, Franck, Ruben, Malo, Baptiste, Louis  
+> Datathon NEXA Digital School 2026 — Équipe : Alexis · Franck · Ruben · Malo · Baptiste · Louis  
 > Journée 1 — Exploration du corpus et mise en place du pipeline
 
 ---
@@ -47,17 +47,25 @@ Le datathon porte sur la crise virale déclenchée entre mars et mai 2026 opposa
 
 ---
 
-## 3. Chiffres clés J1
+## 3. Chiffres clés
 
-| Indicateur | Valeur | Source |
+Les valeurs calculées sont centralisées dans `slides/chiffres_cles.json` — chaque responsable renseigne sa section dans ce fichier.  
+Chiffres Louis calculés et JSON mis à jour (`notebooks/J1_exploration.ipynb`). Figures générées dans `slides/figures/`.
+
+Distribution engagement : RETWEET 85,8% · REPLY 10,2% · QUOTE 2,1% · ORIGINAL 1,9%  
+Distribution sentiment : neutral 66,3% · **negative 30,7%** · positive 3,0%
+
+| Indicateur | Valeur | Responsable |
 |---|---|---|
-| Volume total | 35 396 tweets | `load_corpus()` |
-| Pic journalier | **7 303 tweets** le 27 mars 2026 | `notebooks/J1_exploration.ipynb` |
-| Ratio RETWEET | *voir notebook* | `notebooks/J1_exploration.ipynb` |
-| Comptes uniques | *voir notebook* | `notebooks/J1_exploration.ipynb` |
-| Narratif dominant | *voir analyse Franck (P2)* | Exploration manuelle |
-
-> Les valeurs calculées automatiquement sont dans `slides/chiffres_cles.json` (mis à jour par le notebook).
+| Volume total | **35 396 tweets** | ✅ Louis (notebook) |
+| Pic journalier | **7 303 tweets** le 27 mars 2026 | ✅ Louis (notebook) |
+| Ratio RETWEET | **85,8%** | ✅ Louis (notebook) |
+| Comptes uniques | **10 437** | ✅ Louis (notebook) |
+| Taux de négativité | **30,7%** | ✅ Louis (notebook) |
+| Narratif dominant | *→ analyse Franck (J2)* | Franck — clé `narratif_dominant` |
+| Type d'acteur majoritaire | *→ analyse Ruben (J2)* | Ruben — clé `top_acteur_type` |
+| Terme dominant | *→ analyse Franck (J2)* | Franck — clé `terme_dominant` |
+| Note coordination | *→ analyse Malo (J2)* | Malo — clé `note_coordination` |
 
 ---
 
@@ -72,7 +80,7 @@ Le datathon porte sur la crise virale déclenchée entre mars et mai 2026 opposa
 - Identification des "tweets seeds" (ceux qui ont déclenché les vagues)
 - Distribution comptes vérifiés vs non-vérifiés dans les phases de pic
 
-*→ Résultats : à compléter en fin de J1*
+**→ Ruben** : renseigner `top_acteur_type` dans `slides/chiffres_cles.json`
 
 ---
 
@@ -90,7 +98,8 @@ Narratifs pressentis à partir de la lecture du corpus :
 | `defense_cnc` | Soutien à la décision du CNC, respect des règles |
 | `autre` | Hors-sujet, ironique, non classifiable |
 
-*→ Exemples de tweets par narratif : à compléter par Franck pour calibrer l'AgentAnalyste*
+**→ Franck** : identifier le narratif dominant, renseigner `narratif_dominant` dans `slides/chiffres_cles.json`.  
+Préparer 2-3 exemples de tweets par narratif — ils serviront à calibrer l'AgentAnalyste en J2.
 
 ---
 
@@ -103,7 +112,7 @@ Narratifs pressentis à partir de la lecture du corpus :
 - Durée de la crise, vitesse de montée, vitesse de descente
 - Ratio RETWEET par heure (amplification vs opinion originale)
 
-*→ Figure : `slides/figures/fig_timeline.png` (générée par notebook J1)*
+**→ Figure** : `slides/figures/fig_timeline.png` — générée par `notebooks/J1_exploration.ipynb`
 
 ---
 
@@ -116,7 +125,7 @@ Narratifs pressentis à partir de la lecture du corpus :
 - Comptes récents (< 30 jours) dans les pics
 - Clusters thématiques par horaire
 
-*→ Résultats : à compléter en fin de J1*
+**→ Malo** : renseigner `note_coordination` dans `slides/chiffres_cles.json`
 
 ---
 
@@ -129,13 +138,13 @@ Narratifs pressentis à partir de la lecture du corpus :
 - Montée en agressivité (intensité du sentiment négatif)
 - Vocabulaire dominant par camp
 
-*→ Résultats : à compléter en fin de J1*
+**→ Franck** : renseigner `terme_dominant` dans `slides/chiffres_cles.json`
 
 ---
 
 ## 5. Architecture technique mise en place (J1)
 
-Le pipeline LangGraph est entièrement structuré et partiellement implémenté :
+Le pipeline LangGraph est câblé et l'AgentVeille est opérationnel. Les agents d'analyse et de réponse sont à implémenter en J2 par Ruben et Baptiste.
 
 ```
 load_corpus() → CrisisState → AgentAnalyste → AgentVeille → [HumanGate] → AgentStratège → AgentRédacteur → outputs/
@@ -145,33 +154,59 @@ load_corpus() → CrisisState → AgentAnalyste → AgentVeille → [HumanGate] 
 |---|---|---|
 | Chargeur corpus | `tools/corpus_loader.py` | ✅ Implémenté |
 | État partagé | `pipeline/state.py` | ✅ Implémenté |
-| Orchestrateur | `pipeline/graph.py` | ✅ Câblé |
+| Orchestrateur | `pipeline/graph.py` | ✅ Câblé — imports conditionnels J2 |
 | AgentVeille | `agents/veille.py` | ✅ Implémenté et testé |
-| AgentAnalyste | `agents/analyste.py` | 🔧 Structure prête — Ruben finalise J2 |
-| AgentStratège | `agents/stratege.py` | 🔧 Structure prête — Baptiste finalise J2 |
-| AgentRédacteur | `agents/redacteur.py` | 🔧 Structure prête — Baptiste finalise J2 |
+| AgentAnalyste | `agents/analyste.py` | ⬜ À créer — **Ruben (P3), J2** |
+| AgentStratège | `agents/stratege.py` | ⬜ À créer — **Baptiste (P5), J2** |
+| AgentRédacteur | `agents/redacteur.py` | ⬜ À créer — **Baptiste (P5), J2** |
 | HumanGate | `pipeline/graph.py` | ✅ Implémenté |
-| Neutralité éditoriale | `prompts/prompts.py` | ✅ Centralisée (AD-4) |
+| Neutralité éditoriale | `prompts/prompts.py` | ✅ Centralisée |
 
-### Décisions d'architecture contraignantes (AD)
+> `pipeline/graph.py` utilise des imports conditionnels : le pipeline démarre sans erreur même si les agents J2 n'existent pas encore. Dès que Ruben ou Baptiste pousse son fichier sur le repo, le pipeline le charge automatiquement.
 
-Les AD-1 à AD-10 sont détaillées dans `_bmad-output/architecture/.../ARCHITECTURE-SPINE.md`. Les plus critiques pour J2 :
+### Contraintes d'architecture à respecter en J2
 
-- **AD-1** : LangGraph StateGraph — pas de N8N, pas de LangChain seul
-- **AD-2** : CrisisState TypedDict — seul vecteur de données entre agents
-- **AD-3** : Gemini via `get_llm()` — modèle configurable par `GEMINI_MODEL` dans `.env`
-- **AD-4** : `NEUTRALITY_SYSTEM_PROMPT` obligatoire sur chaque agent
-- **AD-5** : `source_tweet_ids` obligatoire dans chaque output Pydantic (anti-hallucination)
-- **AD-6** : Clé API jamais dans le code — `.env` ou Colab Secrets uniquement
-- **AD-7** : HumanGate obligatoire avant toute génération de réponse
+| Contrainte | Règle |
+|---|---|
+| Orchestration | LangGraph StateGraph uniquement — pas d'appels directs entre agents |
+| Données partagées | `CrisisState` TypedDict — seul vecteur entre les agents |
+| LLM | Utiliser `get_llm()` depuis `prompts/prompts.py` — jamais de clé en dur dans le code |
+| Neutralité | `NEUTRALITY_SYSTEM_PROMPT` obligatoire dans chaque agent |
+| Anti-hallucination | `source_tweet_ids` obligatoire dans chaque output Pydantic |
+| Validation humaine | HumanGate déjà câblé dans le graphe — ne pas le contourner |
 
 ---
 
-## 6. Généricité — réponse à la contrainte du jury
+## 6. Setup
+
+```bash
+# 1. Cloner le repo
+git clone https://github.com/ValetteL/Datathon.git && cd Datathon
+
+# 2. Installer les dépendances
+pip install -r requirements.txt
+
+# 3. Configurer la clé API Gemini
+cp .env.example .env
+# Éditer .env → GOOGLE_API_KEY=ta_clé_ici
+
+# 4. Déposer le dataset (partagé via Teams — ne pas committer)
+# Dataset/data.xlsx
+
+# 5. Vérifier que l'environnement est OK
+python -c "from agents.veille import run_veille; print('OK')"
+```
+
+**Clé API** : obtenir sur `https://aistudio.google.com` → "Get API key". Gratuit, quota individuel.  
+**Dataset** : partagé via Teams uniquement. Ne jamais committer `Dataset/` (gitignore en place).
+
+---
+
+## 7. Généricité — réponse à la contrainte du jury
 
 > *"Si demain c'est Coca-Cola, vos agents marchent ?"*
 
-**Oui.** Le seul paramètre à changer est `corpus_config` :
+**Oui.** Le seul paramètre à changer est `corpus_config` dans `pipeline/graph.py` :
 
 ```python
 corpus_config = {
@@ -181,16 +216,19 @@ corpus_config = {
 }
 ```
 
-Le pipeline charge n'importe quel corpus au format `data.xlsx`, les agents s'adaptent au contexte fourni, et les seuils de l'AgentVeille sont recalibrables par constantes.
+Le pipeline charge n'importe quel corpus au format `data.xlsx`, les agents s'adaptent au contexte fourni, et les seuils de l'AgentVeille sont recalibrables par constantes dans `agents/veille.py`.
 
 ---
 
-## 7. Suivi du sprint
+## 8. Priorités J2
 
-État J1 en fin de journée → `_bmad-output/implementation-artifacts/sprint-status.yaml`
+| Qui | Quoi | Livrable |
+|---|---|---|
+| **Ruben (P3)** | Implémenter `agents/analyste.py` | Fichier pushé sur le repo |
+| **Baptiste (P5)** | Implémenter `agents/stratege.py` + `agents/redacteur.py` | 2 fichiers pushés sur le repo |
+| **Louis (P6)** | Intégration pipeline complet | Pipeline end-to-end opérationnel |
+| **Malo (P4)** | Valider `agents/veille.py` sur corpus réel, ajuster seuils | Seuils validés + `note_coordination` dans JSON |
+| **Franck (P2)** | Finaliser analyse narratifs + few-shot examples | Few-shot prêts pour calibrer Ruben |
+| **Alexis (P1)** | Tests pipeline J2 | Bugs remontés, rapport de test |
 
-**J2 — priorités immédiates :**
-1. Ruben (P3) : finaliser `agents/analyste.py` avec few-shot examples de Franck
-2. Baptiste (P5) : finaliser `agents/stratege.py` + `agents/redacteur.py`
-3. Louis (P6) : intégration pipeline complet (`pipeline/graph.py` — Story 2.6)
-4. Malo (P4) : valider `agents/veille.py` sur corpus réel, ajuster seuils si besoin
+Suivi sprint → `_bmad-output/implementation-artifacts/sprint-status.yaml`
