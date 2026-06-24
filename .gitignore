@@ -1,0 +1,34 @@
+# ── Données (partager via Google Drive / Teams) ──────────────────────────────
+Dataset/
+
+# ── Outputs de run (générés à l'exécution) ───────────────────────────────────
+outputs/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+
+# ── Environnement virtuel ─────────────────────────────────────────────────────
+.env
+.venv/
+venv/
+env/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── Tooling Claude Code (spécifique à chaque poste) ──────────────────────────
+# Ces dossiers sont recréés automatiquement par Claude Code.
+.claude/
+.agent/
+_bmad/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

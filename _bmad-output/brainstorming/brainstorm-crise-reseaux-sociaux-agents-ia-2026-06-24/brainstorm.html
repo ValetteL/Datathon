@@ -1,0 +1,2283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brainstorming — Système IA de gestion de crise virale</title>
+<style>
+  :root {
+    --bg: #050810;
+    --bg2: #0a0f1e;
+    --bg3: #0d1425;
+    --accent-blue: #00d4ff;
+    --accent-purple: #7c3aed;
+    --accent-pink: #f0047f;
+    --accent-green: #00ff88;
+    --accent-yellow: #ffd600;
+    --accent-orange: #ff6b35;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-mid: #94a3b8;
+    --border: rgba(0, 212, 255, 0.15);
+    --glow-blue: 0 0 20px rgba(0, 212, 255, 0.4);
+    --glow-purple: 0 0 20px rgba(124, 58, 237, 0.4);
+    --glow-pink: 0 0 20px rgba(240, 4, 127, 0.4);
+    --glow-green: 0 0 20px rgba(0, 255, 136, 0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── SCANLINES overlay ── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── HEADER ── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,0.25) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 20% 80%, rgba(0,212,255,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 80% 70%, rgba(240,4,127,0.12) 0%, transparent 50%);
+  }
+
+  /* Animated network nodes */
+  .network-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .node {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    opacity: 0.6;
+    animation: pulse-node 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-node {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.5); opacity: 0.8; }
+  }
+
+  .hero-tag {
+    display: inline-block;
+    background: rgba(124,58,237,0.2);
+    border: 1px solid rgba(124,58,237,0.5);
+    color: #a78bfa;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.4rem 1.2rem;
+    border-radius: 999px;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, #ffffff 0%, #00d4ff 40%, #7c3aed 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--text-mid);
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+    margin-top: 1rem;
+  }
+
+  .hero-stat {
+    text-align: center;
+  }
+
+  .hero-stat-num {
+    display: block;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent-blue);
+    text-shadow: var(--glow-blue);
+  }
+
+  .hero-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    animation: bounce 2s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  .scroll-indicator::after {
+    content: '↓';
+    font-size: 1.2rem;
+    color: var(--accent-blue);
+  }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(8px); }
+  }
+
+  /* ── NAV ── */
+  .toc {
+    background: rgba(10,15,30,0.95);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .toc a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .toc a:hover {
+    color: var(--accent-blue);
+    border-color: rgba(0,212,255,0.3);
+    background: rgba(0,212,255,0.05);
+  }
+
+  /* ── SECTION BASE ── */
+  .section {
+    padding: 5rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .section-num {
+    font-size: 4rem;
+    font-weight: 900;
+    opacity: 0.1;
+    line-height: 1;
+    color: white;
+    min-width: 60px;
+  }
+
+  .section-title-block h2 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 0.3rem;
+  }
+
+  .section-title-block .technique-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 0 2rem;
+  }
+
+  /* ── TECH 1: FIRST PRINCIPLES — ATOM DECONSTRUCT ── */
+  #t1 {
+    background: linear-gradient(180deg, var(--bg) 0%, rgba(0,212,255,0.03) 50%, var(--bg) 100%);
+    position: relative;
+  }
+
+  .atom-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .axiom-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .axiom-index {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, var(--accent-blue), var(--accent-purple), var(--accent-blue));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 900;
+    color: var(--bg);
+    flex-shrink: 0;
+    box-shadow: var(--glow-blue);
+    animation: spin-slow 8s linear infinite;
+    position: relative;
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .axiom-index span {
+    animation: spin-slow 8s linear infinite reverse;
+  }
+
+  .axiom-card {
+    background: rgba(0,212,255,0.04);
+    border: 1px solid rgba(0,212,255,0.12);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .axiom-card:hover {
+    background: rgba(0,212,255,0.08);
+    border-color: rgba(0,212,255,0.3);
+    transform: translateX(4px);
+    box-shadow: var(--glow-blue);
+  }
+
+  .axiom-card p {
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+
+  /* Phase badge in T1 */
+  .phase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+
+  .phase-badge.signal { background: rgba(0,212,255,0.15); color: var(--accent-blue); }
+  .phase-badge.pipeline { background: rgba(124,58,237,0.15); color: #a78bfa; }
+  .phase-badge.arch { background: rgba(0,255,136,0.15); color: var(--accent-green); }
+  .phase-badge.process { background: rgba(255,107,53,0.15); color: var(--accent-orange); }
+
+  /* ── TECH 2: MIND MAP ── */
+  #t2 {
+    background: var(--bg2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #t2::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(124,58,237,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .mindmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mindmap-cluster {
+    background: rgba(124,58,237,0.06);
+    border: 1px solid rgba(124,58,237,0.2);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.3s;
+  }
+
+  .mindmap-cluster:hover {
+    background: rgba(124,58,237,0.1);
+    border-color: rgba(124,58,237,0.4);
+    box-shadow: var(--glow-purple);
+    transform: translateY(-2px);
+  }
+
+  .cluster-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .cluster-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #a78bfa;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(124,58,237,0.2);
+    padding-bottom: 0.5rem;
+  }
+
+  .cluster-ideas {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .cluster-ideas li {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-size: 0.85rem;
+    color: var(--text-mid);
+    line-height: 1.5;
+  }
+
+  .cluster-ideas li::before {
+    content: '◆';
+    color: rgba(124,58,237,0.5);
+    font-size: 0.5rem;
+    margin-top: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  /* ── TECH 3: JOBS TO BE DONE ── */
+  #t3 { background: var(--bg); }
+
+  .jtbd-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .jtbd-card {
+    background: var(--bg3);
+    border: 1px solid rgba(0,255,136,0.12);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .jtbd-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent-green);
+    opacity: 0.5;
+  }
+
+  .jtbd-card:hover {
+    border-color: rgba(0,255,136,0.35);
+    box-shadow: var(--glow-green);
+    transform: translateY(-2px);
+  }
+
+  .jtbd-card:hover::before {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--accent-green);
+  }
+
+  .jtbd-job-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-green);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .jtbd-job-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(0,255,136,0.2);
+  }
+
+  .jtbd-card p {
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ── TECH 4: SIX HATS ── */
+  #t4 {
+    background: var(--bg2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hats-container {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+  }
+
+  .hat-section {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .hat-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+  }
+
+  .hat-emoji {
+    font-size: 1.8rem;
+  }
+
+  .hat-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+  }
+
+  .hat-desc {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    margin-left: auto;
+    font-style: italic;
+  }
+
+  .hat-toggle {
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+    transition: transform 0.3s;
+  }
+
+  .hat-body {
+    padding: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  /* White hat */
+  .hat-blanc .hat-header { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); }
+  .hat-blanc .hat-title { color: #f0f0f0; }
+  .hat-blanc .hat-body { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-top: none; }
+  .hat-blanc .idea-chip { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); }
+  .hat-blanc .idea-chip:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.35); }
+
+  /* Red hat */
+  .hat-rouge .hat-header { background: rgba(240,4,127,0.1); border: 1px solid rgba(240,4,127,0.25); }
+  .hat-rouge .hat-title { color: #f9a8d4; }
+  .hat-rouge .hat-body { background: rgba(240,4,127,0.03); border: 1px solid rgba(240,4,127,0.1); border-top: none; }
+  .hat-rouge .idea-chip { background: rgba(240,4,127,0.06); border-color: rgba(240,4,127,0.2); }
+  .hat-rouge .idea-chip:hover { background: rgba(240,4,127,0.12); border-color: rgba(240,4,127,0.45); box-shadow: var(--glow-pink); }
+
+  /* Green hat */
+  .hat-vert .hat-header { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); }
+  .hat-vert .hat-title { color: #6ee7b7; }
+  .hat-vert .hat-body { background: rgba(0,255,136,0.02); border: 1px solid rgba(0,255,136,0.08); border-top: none; }
+  .hat-vert .idea-chip { background: rgba(0,255,136,0.05); border-color: rgba(0,255,136,0.15); }
+  .hat-vert .idea-chip:hover { background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.4); box-shadow: var(--glow-green); }
+
+  /* Yellow hat */
+  .hat-jaune .hat-header { background: rgba(255,214,0,0.08); border: 1px solid rgba(255,214,0,0.2); }
+  .hat-jaune .hat-title { color: #fde68a; }
+  .hat-jaune .hat-body { background: rgba(255,214,0,0.02); border: 1px solid rgba(255,214,0,0.08); border-top: none; }
+  .hat-jaune .idea-chip { background: rgba(255,214,0,0.05); border-color: rgba(255,214,0,0.15); }
+  .hat-jaune .idea-chip:hover { background: rgba(255,214,0,0.1); border-color: rgba(255,214,0,0.4); box-shadow: 0 0 20px rgba(255,214,0,0.3); }
+
+  /* Black hat */
+  .hat-noir .hat-header { background: rgba(100,116,139,0.1); border: 1px solid rgba(100,116,139,0.2); }
+  .hat-noir .hat-title { color: #94a3b8; }
+  .hat-noir .hat-body { background: rgba(100,116,139,0.03); border: 1px solid rgba(100,116,139,0.08); border-top: none; }
+  .hat-noir .idea-chip { background: rgba(100,116,139,0.06); border-color: rgba(100,116,139,0.15); }
+  .hat-noir .idea-chip:hover { background: rgba(100,116,139,0.12); border-color: rgba(100,116,139,0.4); }
+
+  /* Blue hat */
+  .hat-bleu .hat-header { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); }
+  .hat-bleu .hat-title { color: #67e8f9; }
+  .hat-bleu .hat-body { background: rgba(0,212,255,0.02); border: 1px solid rgba(0,212,255,0.08); border-top: none; }
+  .hat-bleu .idea-chip { background: rgba(0,212,255,0.05); border-color: rgba(0,212,255,0.15); }
+  .hat-bleu .idea-chip:hover { background: rgba(0,212,255,0.1); border-color: rgba(0,212,255,0.4); box-shadow: var(--glow-blue); }
+
+  .idea-chip {
+    border: 1px solid;
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--text);
+    transition: all 0.25s;
+    cursor: default;
+  }
+
+  /* ── TECH 5: WHAT IF — SCENARIO CARDS ── */
+  #t5 { background: var(--bg); }
+
+  .scenarios-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .scenario-block {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid;
+  }
+
+  .scenario-header {
+    padding: 1.25rem 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .scenario-q {
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+
+  .scenario-count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    margin-left: auto;
+    opacity: 0.7;
+  }
+
+  .scenario-ideas {
+    padding: 1.25rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .scenario-idea {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .scenario-idea:hover {
+    transform: translateX(4px);
+  }
+
+  .si-bullet {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.55rem;
+  }
+
+  /* Scenario colors */
+  .sc-data { border-color: rgba(0,212,255,0.2); }
+  .sc-data .scenario-header { background: rgba(0,212,255,0.07); }
+  .sc-data .scenario-q { color: var(--accent-blue); }
+  .sc-data .scenario-count { background: rgba(0,212,255,0.15); color: var(--accent-blue); }
+  .sc-data .scenario-ideas { background: rgba(0,212,255,0.02); }
+  .sc-data .scenario-idea:hover { background: rgba(0,212,255,0.05); }
+  .sc-data .si-bullet { background: var(--accent-blue); }
+
+  .sc-rt { border-color: rgba(240,4,127,0.2); }
+  .sc-rt .scenario-header { background: rgba(240,4,127,0.07); }
+  .sc-rt .scenario-q { color: #fb7185; }
+  .sc-rt .scenario-count { background: rgba(240,4,127,0.15); color: #fb7185; }
+  .sc-rt .scenario-ideas { background: rgba(240,4,127,0.02); }
+  .sc-rt .scenario-idea:hover { background: rgba(240,4,127,0.05); }
+  .sc-rt .si-bullet { background: #fb7185; }
+
+  .sc-inst { border-color: rgba(124,58,237,0.2); }
+  .sc-inst .scenario-header { background: rgba(124,58,237,0.07); }
+  .sc-inst .scenario-q { color: #a78bfa; }
+  .sc-inst .scenario-count { background: rgba(124,58,237,0.15); color: #a78bfa; }
+  .sc-inst .scenario-ideas { background: rgba(124,58,237,0.02); }
+  .sc-inst .scenario-idea:hover { background: rgba(124,58,237,0.05); }
+  .sc-inst .si-bullet { background: #a78bfa; }
+
+  .sc-trust { border-color: rgba(255,107,53,0.2); }
+  .sc-trust .scenario-header { background: rgba(255,107,53,0.07); }
+  .sc-trust .scenario-q { color: var(--accent-orange); }
+  .sc-trust .scenario-count { background: rgba(255,107,53,0.15); color: var(--accent-orange); }
+  .sc-trust .scenario-ideas { background: rgba(255,107,53,0.02); }
+  .sc-trust .scenario-idea:hover { background: rgba(255,107,53,0.05); }
+  .sc-trust .si-bullet { background: var(--accent-orange); }
+
+  .sc-prev { border-color: rgba(0,255,136,0.2); }
+  .sc-prev .scenario-header { background: rgba(0,255,136,0.07); }
+  .sc-prev .scenario-q { color: var(--accent-green); }
+  .sc-prev .scenario-count { background: rgba(0,255,136,0.15); color: var(--accent-green); }
+  .sc-prev .scenario-ideas { background: rgba(0,255,136,0.02); }
+  .sc-prev .scenario-idea:hover { background: rgba(0,255,136,0.05); }
+  .sc-prev .si-bullet { background: var(--accent-green); }
+
+  .sc-mono { border-color: rgba(255,214,0,0.2); }
+  .sc-mono .scenario-header { background: rgba(255,214,0,0.07); }
+  .sc-mono .scenario-q { color: var(--accent-yellow); }
+  .sc-mono .scenario-count { background: rgba(255,214,0,0.15); color: var(--accent-yellow); }
+  .sc-mono .scenario-ideas { background: rgba(255,214,0,0.02); }
+  .sc-mono .scenario-idea:hover { background: rgba(255,214,0,0.05); }
+  .sc-mono .si-bullet { background: var(--accent-yellow); }
+
+  .sc-bad { border-color: rgba(239,68,68,0.2); }
+  .sc-bad .scenario-header { background: rgba(239,68,68,0.07); }
+  .sc-bad .scenario-q { color: #fca5a5; }
+  .sc-bad .scenario-count { background: rgba(239,68,68,0.15); color: #fca5a5; }
+  .sc-bad .scenario-ideas { background: rgba(239,68,68,0.02); }
+  .sc-bad .scenario-idea:hover { background: rgba(239,68,68,0.05); }
+  .sc-bad .si-bullet { background: #fca5a5; }
+
+  /* ── SYNTHESIS / INSIGHTS ── */
+  #synthesis {
+    background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%);
+    padding: 6rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #synthesis::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 100%, rgba(124,58,237,0.2) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 20% 30%, rgba(0,212,255,0.1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .synthesis-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .synth-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .synth-header h2 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ffffff, #00d4ff, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+  }
+
+  .synth-header p {
+    color: var(--text-dim);
+    font-size: 1rem;
+  }
+
+  /* Insight cards */
+  .insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 4rem;
+  }
+
+  .insight-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+
+  .insight-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+  }
+
+  .insight-card:hover {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(0,212,255,0.1);
+  }
+
+  .insight-num {
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    color: var(--accent-blue);
+    margin-bottom: 0.75rem;
+  }
+
+  .insight-card p {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* ── ARCHITECTURE DIAGRAM ── */
+  .arch-diagram {
+    margin-top: 3rem;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .arch-diagram::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,212,255,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .arch-title {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 2.5rem;
+  }
+
+  .arch-flow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Tier 0: Crisis event */
+  .arch-tier-crisis {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0;
+  }
+
+  .crisis-box {
+    background: linear-gradient(135deg, rgba(240,4,127,0.2), rgba(240,4,127,0.08));
+    border: 2px solid rgba(240,4,127,0.5);
+    border-radius: 12px;
+    padding: 0.875rem 2rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #f9a8d4;
+    text-align: center;
+    box-shadow: var(--glow-pink);
+    animation: crisis-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes crisis-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(240,4,127,0.4), 0 0 40px rgba(240,4,127,0.1); }
+    50% { box-shadow: 0 0 30px rgba(240,4,127,0.7), 0 0 60px rgba(240,4,127,0.2); }
+  }
+
+  .arch-arrow-down {
+    width: 2px;
+    height: 2.5rem;
+    background: linear-gradient(180deg, rgba(240,4,127,0.5), rgba(0,212,255,0.5));
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .arch-arrow-down::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 7px solid rgba(0,212,255,0.7);
+  }
+
+  /* Tier 1: Orchestrateur */
+  .arch-tier-orch {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0;
+    width: 100%;
+  }
+
+  .orch-box {
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
+    border: 2px solid var(--accent-blue);
+    border-radius: 14px;
+    padding: 1.25rem 2.5rem;
+    text-align: center;
+    box-shadow: var(--glow-blue);
+    max-width: 500px;
+    width: 100%;
+  }
+
+  .orch-box-title {
+    font-weight: 900;
+    font-size: 1rem;
+    color: var(--accent-blue);
+    margin-bottom: 0.4rem;
+  }
+
+  .orch-box-sub {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .state-chips {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  .state-chip {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent-blue);
+    letter-spacing: 0.05em;
+  }
+
+  /* Tier 2: Agents */
+  .arch-agents-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    width: 100%;
+    padding: 0 1rem;
+  }
+
+  .agent-box {
+    background: rgba(124,58,237,0.08);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 10px;
+    padding: 0.875rem 1rem;
+    text-align: center;
+    min-width: 100px;
+    flex: 1;
+    max-width: 130px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .agent-box:hover {
+    background: rgba(124,58,237,0.15);
+    border-color: rgba(124,58,237,0.6);
+    box-shadow: var(--glow-purple);
+    transform: translateY(-3px);
+  }
+
+  .agent-icon {
+    font-size: 1.25rem;
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+
+  .agent-name {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #a78bfa;
+    display: block;
+  }
+
+  /* Tier 3: Verifier */
+  .arch-tier-verif {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .verif-box {
+    background: linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,255,136,0.04));
+    border: 2px solid rgba(0,255,136,0.4);
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: var(--glow-green);
+    animation: verif-pulse 3s ease-in-out infinite 1s;
+  }
+
+  @keyframes verif-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(0,255,136,0.3); }
+    50% { box-shadow: 0 0 35px rgba(0,255,136,0.6), 0 0 60px rgba(0,255,136,0.15); }
+  }
+
+  .verif-title {
+    font-weight: 900;
+    color: var(--accent-green);
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .verif-sub {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  /* Tier 4: Human gate */
+  .human-gate {
+    background: rgba(255,214,0,0.08);
+    border: 1px solid rgba(255,214,0,0.3);
+    border-radius: 12px;
+    padding: 0.875rem 2rem;
+    text-align: center;
+    max-width: 350px;
+    width: 100%;
+  }
+
+  .human-gate-title {
+    font-weight: 700;
+    color: var(--accent-yellow);
+    font-size: 0.9rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .human-gate-sub {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  /* Output tier */
+  .arch-outputs {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .output-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.75rem;
+    color: var(--text-mid);
+    text-align: center;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding: 3rem 2rem;
+    text-align: center;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-logo {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── UTIL ── */
+  .highlight {
+    color: var(--accent-blue);
+    font-weight: 600;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .tag-blue { background: rgba(0,212,255,0.12); color: var(--accent-blue); }
+  .tag-purple { background: rgba(124,58,237,0.12); color: #a78bfa; }
+  .tag-green { background: rgba(0,255,136,0.12); color: var(--accent-green); }
+  .tag-orange { background: rgba(255,107,53,0.12); color: var(--accent-orange); }
+
+  /* Collapse toggle */
+  .hat-body.collapsed { display: none; }
+
+  .cascade-line {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.3), rgba(124,58,237,0.3), transparent);
+    margin: 2rem 0;
+  }
+
+  /* Animated data stream */
+  .data-stream {
+    position: relative;
+    height: 40px;
+    overflow: hidden;
+    margin: 1rem 0;
+    border-radius: 4px;
+    background: rgba(0,0,0,0.3);
+    font-family: 'Courier New', monospace;
+    font-size: 0.65rem;
+    color: var(--accent-green);
+    padding: 0.5rem 1rem;
+    white-space: nowrap;
+    mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+  }
+
+  .stream-inner {
+    display: inline-block;
+    animation: stream 20s linear infinite;
+  }
+
+  @keyframes stream {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* Velocity meter */
+  .velocity-meter {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(0,212,255,0.1);
+  }
+
+  .vel-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .vel-bar-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .vel-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    animation: vel-fill 3s ease-out forwards;
+  }
+
+  @keyframes vel-fill {
+    from { width: 0; }
+  }
+
+  .vel-val {
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="network-bg" id="networkBg"></div>
+
+  <div class="hero-tag">Session Brainstorming · Datathon 2026</div>
+  <h1>Système IA de gestion<br>des crises virales</h1>
+  <p class="hero-sub">
+    Analyse et réponse aux tempêtes réseaux sociaux par agents IA —
+    illustré par le cas d'une streameuse Twitch et de la commission aide à la création en France.
+  </p>
+
+  <div class="hero-meta">
+    <div class="hero-stat">
+      <span class="hero-stat-num">115</span>
+      <span class="hero-stat-label">Idées générées</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-num">5</span>
+      <span class="hero-stat-label">Techniques</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-num">8+</span>
+      <span class="hero-stat-label">Agents IA</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-num">24/06</span>
+      <span class="hero-stat-label">2026</span>
+    </div>
+  </div>
+
+  <div class="scroll-indicator">EXPLORER</div>
+</section>
+
+<!-- NAV -->
+<nav class="toc">
+  <a href="#t1">Premier Principes</a>
+  <a href="#t2">Mind Map</a>
+  <a href="#t3">Jobs to Be Done</a>
+  <a href="#t4">Six Chapeaux</a>
+  <a href="#t5">What If</a>
+  <a href="#synthesis">Synthèse & Architecture</a>
+</nav>
+
+<!-- DATA STREAM DECORATION -->
+<div class="data-stream">
+  <span class="stream-inner">
+    [signal_detected] velocity=847 tweets/min · [cluster_alpha] narrative="injustice" reach=2.4M · [bot_score] account_age=3d ratio=0.02 → SUSPECT · [timeline] t+0h signal · t+0h42 ignition · t+2h pic · [coordination] 127 accounts posting within 8min verbatim_match=0.87 · [narrative_shift] "polémique" → "scandale" → "épuration" · [agent_verif] confidence=0.91 claims_flagged=2 · [response_queue] draft_prudent ✓ draft_equilibre ✓ draft_assertif ✓ · AWAITING HUMAN REVIEW ·
+    [signal_detected] velocity=847 tweets/min · [cluster_alpha] narrative="injustice" reach=2.4M · [bot_score] account_age=3d ratio=0.02 → SUSPECT · [timeline] t+0h signal · t+0h42 ignition · t+2h pic · [coordination] 127 accounts posting within 8min verbatim_match=0.87 · [narrative_shift] "polémique" → "scandale" → "épuration" · [agent_verif] confidence=0.91 claims_flagged=2 · [response_queue] draft_prudent ✓ draft_equilibre ✓ draft_assertif ✓ · AWAITING HUMAN REVIEW ·
+  </span>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TECHNIQUE 1 — PREMIER PRINCIPES
+══════════════════════════════════════════════════════ -->
+<div id="t1" style="background: linear-gradient(180deg, #050810 0%, rgba(0,212,255,0.03) 50%, #050810 100%); padding: 5rem 0;">
+<div class="section" style="padding-top: 0; padding-bottom: 0;">
+
+  <div class="section-header">
+    <div class="section-num">01</div>
+    <div class="section-title-block">
+      <div class="technique-label" style="color: var(--accent-blue);">Technique 1</div>
+      <h2 style="color: var(--accent-blue);">Premier Principes</h2>
+    </div>
+  </div>
+
+  <p style="color: var(--text-dim); margin-bottom: 2rem; font-size: 0.9rem;">Déconstruire chaque hypothèse jusqu'aux faits bruts, reconstruire depuis zéro. 16 axiomes fondateurs.</p>
+
+  <div class="atom-container">
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>01</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge signal">Signal</div>
+        <p>Une crise virale est structurellement : <span class="highlight">signal → amplification → feedback loop → conséquence institutionnelle</span> — partir de là, pas de ce qu'on croit savoir.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>02</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge pipeline">Pipeline</div>
+        <p>Séparer le <span class="highlight">détecteur de crise</span> (est-ce une crise ?) du <span class="highlight">pipeline d'analyse</span> (quel type, quelle dynamique) — deux jobs distincts.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>03</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge arch">Architecture</div>
+        <p>Construire la couche de <span class="highlight">vérification EN PREMIER</span> avant tous les agents — c'est le socle de confiance, pas un ajout.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>04</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge signal">Orchestration</div>
+        <p>L'orchestrateur doit être <span class="highlight">STATEFUL</span> et tracer le cycle de vie : Émergence → Pic → Déclin — chaque phase active des agents différents.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>05</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge process">Extraction</div>
+        <p>L'extraction des faits est un problème d'<span class="highlight">extraction de données structurées</span> (pas de résumé) — timestamps, claims, acteurs, IDs de posts.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>06</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge pipeline">NLP</div>
+        <p>Le mapping narratif est fondamentalement un problème de <span class="highlight">clustering sémantique</span> : regrouper les tweets par similarité puis labelliser chaque cluster.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>07</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge arch">Graphe</div>
+        <p>La propagation est un problème de <span class="highlight">traversée de graphe</span> (chaînes RT, threads replies, QTs) — pas un problème NLP.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>08</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge signal">Coordination</div>
+        <p>La détection de coordination est un problème d'<span class="highlight">anomalie temporelle</span> : synchronicité de posting, formulations identiques.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>09</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge process">Output</div>
+        <p>Chaque output d'agent doit être un <span class="highlight">JSON structuré (Pydantic)</span>, jamais de prose brute — la prose arrive en dernier avec l'agent rédacteur.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>10</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge pipeline">Contexte</div>
+        <p>La phase réponse requiert le <span class="highlight">contexte institutionnel</span> en input : quel est le mandat, quels sont les risques propres à CETTE institution.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>11</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge arch">Gouvernance</div>
+        <p><span class="highlight">Human-in-the-loop non optionnel</span> pour la réponse : le système recommande, les humains décident — l'agent ne publie jamais seul.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>12</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge signal">Modes</div>
+        <p>Deux modes d'exécution : <span class="highlight">temps-réel</span> (stream processing, faible latence) et <span class="highlight">post-mortem</span> (batch, haute qualité) — même interface, pipeline distinct.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>13</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge arch">Dépendances</div>
+        <p>Les 5 axes ne sont pas indépendants — construire un <span class="highlight">graphe de dépendances</span> : acteurs d'abord, puis propagation, puis coordination.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>14</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge signal">Topologie</div>
+        <p>Le 'pourquoi ça a pris' est une question de <span class="highlight">réseau et d'effet de réseau</span>, pas de contenu — ne pas chercher dans le texte ce qui est dans la topologie.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>15</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge process">Métrique</div>
+        <p>Le <span class="highlight">time-to-peak</span> est une métrique clé : crises &lt;2h vs &gt;24h nécessitent des stratégies de réponse radicalement différentes.</p>
+      </div>
+    </div>
+
+    <div class="axiom-row">
+      <div class="axiom-index"><span>16</span></div>
+      <div class="axiom-card">
+        <div class="phase-badge pipeline">Benchmark</div>
+        <p>Le corpus du cas Twitch = <span class="highlight">jeu de données étiqueté de référence</span> pour évaluer et calibrer tout le système.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div class="cascade-line"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     TECHNIQUE 2 — MIND MAP
+══════════════════════════════════════════════════════ -->
+<div id="t2" style="background: var(--bg2); padding: 5rem 0; position: relative; overflow: hidden;">
+<div style="position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(124,58,237,0.08) 0%, transparent 70%); pointer-events: none;"></div>
+<div class="section" style="padding-top: 0; padding-bottom: 0; position: relative; z-index: 1;">
+
+  <div class="section-header">
+    <div class="section-num">02</div>
+    <div class="section-title-block">
+      <div class="technique-label" style="color: #a78bfa;">Technique 2</div>
+      <h2 style="color: #a78bfa;">Mind Mapping</h2>
+    </div>
+  </div>
+
+  <p style="color: var(--text-dim); margin-bottom: 2rem; font-size: 0.9rem;">Ramification depuis le nœud central vers tous les sous-domaines. 16 branches explorées.</p>
+
+  <div class="mindmap-grid">
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">⏱️</div>
+      <div class="cluster-title">Agent Timeline</div>
+      <ul class="cluster-ideas">
+        <li>Reconstruire la séquence factuelle horodatée AVANT toute interprétation — acte fondateur du pipeline</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">👤</div>
+      <div class="cluster-title">Agent Acteur</div>
+      <ul class="cluster-ideas">
+        <li>Classer chaque compte en rôles : initiateur / amplificateur / contre-voix / média / institution / bot suspect</li>
+        <li>Utiliser un algorithme type PageRank sur le graphe de diffusion — pondérer par followers × vitesse</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">📊</div>
+      <div class="cluster-title">Analyse Narrative</div>
+      <ul class="cluster-ideas">
+        <li>Indice de compétition narrative : mesurer quelle narrative gagne/perd du terrain heure par heure (part de voix par cluster)</li>
+        <li>Détecteur de contre-narratif : identifier les voix qui ont résisté au cadrage dominant</li>
+        <li>Moniteur de glissement lexical : "polémique" → "scandale" → "épuration"</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">🖼️</div>
+      <div class="cluster-title">Agent Visuel</div>
+      <ul class="cluster-ideas">
+        <li>Les crises sont souvent propulsées par des screenshots et mèmes — ajouter un sous-agent de vision</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">🔌</div>
+      <div class="cluster-title">Ingestion & Sources</div>
+      <ul class="cluster-ideas">
+        <li>Schéma d'ingestion corpus platform-agnostique : même structure JSON pour Twitter, Facebook, TikTok, Reddit</li>
+        <li>Tracker de contenu supprimé : logger ce qui a été effacé — l'absence est un signal</li>
+        <li>Modèle de physique de propagation platform-spécifique : QTs vs reposts vs replies ont des dynamiques différentes</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">🤖</div>
+      <div class="cluster-title">Détection Bots</div>
+      <ul class="cluster-ideas">
+        <li>Scorer de suspicion multi-dimensionnel : âge du compte + ratio followers/following + vitesse de posting + répétition verbatim</li>
+        <li>Bundle de preuves de coordination : IDs de tweets + timestamps + phrasing identique comme pièces justificatives</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">🏷️</div>
+      <div class="cluster-title">Classification de Crise</div>
+      <ul class="cluster-ideas">
+        <li>Classifier en entrée du pipeline : réputation / attaque coordonnée / controverse organique / désinformation — chaque type oriente le pipeline</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">📰</div>
+      <div class="cluster-title">Amplification Médias</div>
+      <ul class="cluster-ideas">
+        <li>Tracker d'amplification médiatique : à quelle heure les médias traditionnels ont relayé, et comment le framing a changé</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">🔄</div>
+      <div class="cluster-title">Machine à États</div>
+      <ul class="cluster-ideas">
+        <li>Étincelle → Ignition → Viralité → Pic → Réponse institutionnelle → Retombée — chaque état active des agents dédiés</li>
+      </ul>
+    </div>
+
+    <div class="mindmap-cluster">
+      <div class="cluster-icon">✅</div>
+      <div class="cluster-title">Agent Vérificateur Cross-Agent</div>
+      <ul class="cluster-ideas">
+        <li>Re-lit les outputs de tous les agents, croise avec les données brutes, émet un score de confiance + liste des claims douteux</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div class="cascade-line"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     TECHNIQUE 3 — JOBS TO BE DONE
+══════════════════════════════════════════════════════ -->
+<div id="t3" style="background: var(--bg); padding: 5rem 0;">
+<div class="section" style="padding-top: 0; padding-bottom: 0;">
+
+  <div class="section-header">
+    <div class="section-num">03</div>
+    <div class="section-title-block">
+      <div class="technique-label" style="color: var(--accent-green);">Technique 3</div>
+      <h2 style="color: var(--accent-green);">Jobs to Be Done</h2>
+    </div>
+  </div>
+
+  <p style="color: var(--text-dim); margin-bottom: 2rem; font-size: 0.9rem;">Quel est le vrai job que l'outil est embauché pour faire ? 14 jobs identifiés, chacun avec son propre critère de succès.</p>
+
+  <!-- Velocity meters decoration -->
+  <div class="velocity-meter">
+    <span class="vel-label">URGENCE DÉTECTÉE</span>
+    <div class="vel-bar-track"><div class="vel-bar-fill" style="width: 87%; background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));"></div></div>
+    <span class="vel-val" style="color: var(--accent-blue);">87%</span>
+  </div>
+
+  <div class="jtbd-grid">
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Institution en crise</div>
+      <p>"MAINTENANT QUOI ?" → construire une file de priorité d'actions : faire X d'abord, puis Y, jamais Z — le système trie l'urgence.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Chercheur / Analyste</div>
+      <p>"Récit défendable" → construire un ledger de faits immuables avec citations avant toute interprétation — l'ordre compte.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Alerte précoce</div>
+      <p>Seuil d'alerte sur la vélocité d'engagement : quand l'accélération dépasse N× la baseline, déclencher le pipeline.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Comportement coordonné</div>
+      <p>Ne pas juste détecter, estimer la TAILLE du groupe coordonné et son reach effectif (combien de vues).</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Démo Datathon</div>
+      <p>Sortie visuelle narrative convaincante, pas juste du JSON backend — le keepsake HTML est le livrable visible.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Décideur politique</div>
+      <p>Brief exécutif d'une page avec scores de confiance, pas rapport de 40 pages — adapter le niveau de sortie au destinataire.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Multi-institution</div>
+      <p>L'outil est configuré avec le contexte/mandat propre à chaque institution — paramétrable, pas hard-codé.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Vérification journalistique</div>
+      <p>Exporter des bundles de preuves qui satisfont aux standards journalistiques — traçabilité complète.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Monitoring temps-réel</div>
+      <p>Séparer le pipeline de surveillance (basse latence) du pipeline d'analyse profonde (haute qualité) — deux vitesses.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Communication institutionnelle</div>
+      <p>L'agent rédacteur génère 3 versions de réponse : ton prudent / équilibré / assertif — le client choisit.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Apprentissage post-crise</div>
+      <p>Chaque crise traitée génère un doc de leçons apprises réinjecté dans la base de connaissance du système.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Prévention</div>
+      <p>Modéliser quels signaux précoces auraient permis d'éviter l'escalade — tourner le système vers l'avant.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Multi-langue</div>
+      <p>Une crise en français amplifiée en anglais nécessite une analyse bilingue simultanée — ne pas traiter les langues en silo.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Passage à l'échelle</div>
+      <p>Les agents fonctionnent sur 1 000 tweets ou 1 million avec la même interface — le volume est un paramètre.</p>
+    </div>
+
+    <div class="jtbd-card">
+      <div class="jtbd-job-label">Job — Piste d'audit</div>
+      <p>Chaque décision du système est loggée et explicable à des parties prenantes non-techniques — observabilité de l'IA.</p>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div class="cascade-line"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     TECHNIQUE 4 — SIX CHAPEAUX
+══════════════════════════════════════════════════════ -->
+<div id="t4" style="background: var(--bg2); padding: 5rem 0;">
+<div class="section" style="padding-top: 0; padding-bottom: 0;">
+
+  <div class="section-header">
+    <div class="section-num">04</div>
+    <div class="section-title-block">
+      <div class="technique-label" style="color: #fde68a;">Technique 4</div>
+      <h2 style="color: #fde68a;">Six Chapeaux de De Bono</h2>
+    </div>
+  </div>
+
+  <p style="color: var(--text-dim); margin-bottom: 2rem; font-size: 0.9rem;">Examiner le problème sous 6 angles distincts. Cliquer sur un chapeau pour l'ouvrir/fermer.</p>
+
+  <div class="hats-container">
+
+    <!-- BLANC -->
+    <div class="hat-section hat-blanc">
+      <div class="hat-header" onclick="toggleHat(this)">
+        <span class="hat-emoji">⬜</span>
+        <span class="hat-title">Chapeau BLANC — Faits & Données</span>
+        <span class="hat-desc">Ce que les données disent réellement</span>
+        <span class="hat-toggle">▼</span>
+      </div>
+      <div class="hat-body">
+        <div class="idea-chip">L'API Twitter/X donne : contenu, horodatage, follower count, RT/likes, chaînes de replies — c'est la matière première, en connaître les lacunes.</div>
+        <div class="idea-chip">LangChain supporte multi-agent, tool use, mémoire, structured output — écosystème mature pour ce cas d'usage.</div>
+        <div class="idea-chip">Les LLMs hallucinent particulièrement sur les claims précis : noms, dates, causalité — ces zones requièrent une vérification systématique.</div>
+        <div class="idea-chip">La détection de coordination est statistiquement difficile quand les bots varient leur phrasing — ne pas sur-compter sur le verbatim matching.</div>
+        <div class="idea-chip">L'analyse de graphe requiert des outils spécialisés (NetworkX, graph-tool) que les LLMs ne traitent pas nativement — les deux couches coexistent.</div>
+        <div class="idea-chip">Protocole d'évaluation correct : donner le corpus brut SANS l'issue connue → comparer l'output à ce qui s'est réellement passé.</div>
+      </div>
+    </div>
+
+    <!-- ROUGE -->
+    <div class="hat-section hat-rouge">
+      <div class="hat-header" onclick="toggleHat(this)">
+        <span class="hat-emoji">🔴</span>
+        <span class="hat-title">Chapeau ROUGE — Émotions & Intuitions</span>
+        <span class="hat-desc">Ce que ça fait ressentir</span>
+        <span class="hat-toggle">▼</span>
+      </div>
+      <div class="hat-body">
+        <div class="idea-chip">Ce sujet est politiquement chargé — le système DOIT afficher visiblement sa neutralité sinon il sera attaqué sur son biais.</div>
+        <div class="idea-chip">Une institution en crise est paralysée par la peur de mal communiquer — l'agent rédacteur doit projeter la prudence, pas l'audace.</div>
+        <div class="idea-chip">Une seule hallucination dans l'output détruit la crédibilité de tout le système — la vérif n'est pas optionnelle, c'est une promesse.</div>
+        <div class="idea-chip">Visualiser la cascade est viscéralement fort — exploiter ça dans la démo : rendre la dynamique visible et palpable.</div>
+      </div>
+    </div>
+
+    <!-- VERT -->
+    <div class="hat-section hat-vert">
+      <div class="hat-header" onclick="toggleHat(this)">
+        <span class="hat-emoji">🟢</span>
+        <span class="hat-title">Chapeau VERT — Créativité & Idées nouvelles</span>
+        <span class="hat-desc">Et si on faisait autrement ?</span>
+        <span class="hat-toggle">▼</span>
+      </div>
+      <div class="hat-body">
+        <div class="idea-chip">Mode "avocat du diable" : faire tourner le système en inversant chaque narratif pour tester la robustesse des analyses.</div>
+        <div class="idea-chip">Finder de "crise jumelle" : rechercher automatiquement dans des archives de crises passées des patterns similaires et proposer des analogies.</div>
+        <div class="idea-chip">La divergence narrative comme signal : une vraie indignation organique DIVERGE en formulations ; une attaque coordonnée CONVERGE — utiliser ça.</div>
+        <div class="idea-chip">Simulation what-if : si l'institution avait répondu 2h plus tôt, le modèle projette… — tourner le système en mode contrefactuel.</div>
+        <div class="idea-chip">Calibration "température politique" des agents : ils refusent les jugements politiques mais flaggent quand le contenu est politiquement chargé.</div>
+        <div class="idea-chip">Score de vulnérabilité narrative de l'institution : quels de ses communiqués passés pourraient être weaponisés dans ce type de crise.</div>
+        <div class="idea-chip">Tracker des "victimes secondaires" : qui d'autre a été emporté dans le blast radius de la crise — cartographier les dommages collatéraux.</div>
+        <div class="idea-chip">L'orchestrateur comme machine à états de crise : chaque phase (Étincelle / Virality / Pic / Réponse) active un sous-ensemble d'agents différent.</div>
+      </div>
+    </div>
+
+    <!-- JAUNE -->
+    <div class="hat-section hat-jaune">
+      <div class="hat-header" onclick="toggleHat(this)">
+        <span class="hat-emoji">🟡</span>
+        <span class="hat-title">Chapeau JAUNE — Optimisme & Valeur</span>
+        <span class="hat-desc">Pourquoi ça va marcher</span>
+        <span class="hat-toggle">▼</span>
+      </div>
+      <div class="hat-body">
+        <div class="idea-chip">Le système transforme un processus réactif (institution qui improvise) en processus <strong>structuré et proactif</strong> — valeur principale.</div>
+        <div class="idea-chip">La contrainte ton neutre est un AVANTAGE commercial : utilisable quel que soit le camp politique de l'institution.</div>
+        <div class="idea-chip">Architecture multi-agent = scalabilité horizontale : ajouter un analyste ne nécessite pas de refactoriser l'ensemble.</div>
+        <div class="idea-chip">Le cas d'étude donne des métriques d'évaluation concrètes : le système reconstruit-il correctement la timeline documentée ?</div>
+      </div>
+    </div>
+
+    <!-- NOIR -->
+    <div class="hat-section hat-noir">
+      <div class="hat-header" onclick="toggleHat(this)">
+        <span class="hat-emoji">⬛</span>
+        <span class="hat-title">Chapeau NOIR — Risques & Prudence</span>
+        <span class="hat-desc">Ce qui peut mal tourner</span>
+        <span class="hat-toggle">▼</span>
+      </div>
+      <div class="hat-body">
+        <div class="idea-chip">L'accès aux données est le risque majeur : les restrictions API Twitter/X rendent les données historiques difficiles à obtenir.</div>
+        <div class="idea-chip">Qualifier "indignation organique" de "attaque coordonnée" par erreur peut causer un dommage réel à des communautés légitimes.</div>
+        <div class="idea-chip">L'agent rédacteur peut halluciner des positions institutionnelles jamais tenues — gate de révision humaine OBLIGATOIRE avant tout draft.</div>
+        <div class="idea-chip">Faux positifs sur les algorithmes de coordination : les communautés militantes légitimes ont aussi des comportements synchronisés.</div>
+        <div class="idea-chip">Stocker des données de tweets publics sur des individus peut soulever des questions RGPD — prévoir un layer de conformité dès l'architecture.</div>
+        <div class="idea-chip">Un système calibré sur la culture Twitter française peut mal généraliser sur d'autres langues ou plateformes — tester sur corpus diversifié.</div>
+      </div>
+    </div>
+
+    <!-- BLEU -->
+    <div class="hat-section hat-bleu">
+      <div class="hat-header" onclick="toggleHat(this)">
+        <span class="hat-emoji">🔵</span>
+        <span class="hat-title">Chapeau BLEU — Process & Organisation</span>
+        <span class="hat-desc">Comment on s'organise pour y arriver</span>
+        <span class="hat-toggle">▼</span>
+      </div>
+      <div class="hat-body">
+        <div class="idea-chip">Commencer par un smoke test : le système peut-il reconstruire les 5 faits clés du cas Twitch correctement ?</div>
+        <div class="idea-chip">Architecture modulaire = 6 personnes peuvent travailler en parallèle sur des agents distincts — aligner la structure de l'équipe sur la structure du système.</div>
+        <div class="idea-chip">Gates de révision humaine aux checkpoints : après extraction faits, après mapping narratif, AVANT tout draft de réponse.</div>
+        <div class="idea-chip">Les 3 phases (comprendre / imaginer / construire) mappent naturellement sur 3 cycles de sprint — phasage de livraison clair.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<div class="cascade-line"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     TECHNIQUE 5 — WHAT IF SCENARIOS
+══════════════════════════════════════════════════════ -->
+<div id="t5" style="background: var(--bg); padding: 5rem 0;">
+<div class="section" style="padding-top: 0; padding-bottom: 0;">
+
+  <div class="section-header">
+    <div class="section-num">05</div>
+    <div class="section-title-block">
+      <div class="technique-label" style="color: var(--accent-orange);">Technique 5</div>
+      <h2 style="color: var(--accent-orange);">Scénarios What If</h2>
+    </div>
+  </div>
+
+  <p style="color: var(--text-dim); margin-bottom: 2rem; font-size: 0.9rem;">Faire exploser une contrainte à la fois et suivre ce qui émerge. 7 contraintes levées, 24 idées générées.</p>
+
+  <div class="scenarios-container">
+
+    <!-- DONNÉES ILLIMITÉES -->
+    <div class="scenario-block sc-data">
+      <div class="scenario-header">
+        <span style="font-size: 1.4rem;">🗄️</span>
+        <span class="scenario-q">Et si on avait des données illimitées ?</span>
+        <span class="scenario-count">4 idées</span>
+      </div>
+      <div class="scenario-ideas">
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Construire une trajectoire de réputation pour chaque acteur : quel était son historique de posting AVANT la crise ?</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Cross-référencer la crise avec d'autres Twitter storms passées — retrouver les mêmes comptes apparaissant en début de crises.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Mapper LE graphe réseau entier de la "guerre culturelle française" une seule fois, puis superposer chaque crise dessus.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Détecteur de "serial amplificateurs" : comptes qui apparaissent systématiquement en début de crises — profil type de l'accélérateur.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPS RÉEL -->
+    <div class="scenario-block sc-rt">
+      <div class="scenario-header">
+        <span style="font-size: 1.4rem;">⚡</span>
+        <span class="scenario-q">Et si on était en temps réel ?</span>
+        <span class="scenario-count">4 idées</span>
+      </div>
+      <div class="scenario-ideas">
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Pipeline de streaming (Kafka ou simple polling) qui alimente les agents en continu — ne pas attendre la fin de crise pour analyser.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Système de triage d'alertes : Niveau 1 = surveiller, Niveau 2 = analyser, Niveau 3 = répondre — escalade automatique.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Dashboard de vélocité : pas juste l'engagement, mais l'ACCÉLÉRATION de l'engagement — la dérivée seconde est le signal précoce.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Protocole de premier intervenant : que fait le système dans les 30 premières minutes de détection — "golden hour" de gestion de crise.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENT INSTITUTIONNEL -->
+    <div class="scenario-block sc-inst">
+      <div class="scenario-header">
+        <span style="font-size: 1.4rem;">🏛️</span>
+        <span class="scenario-q">Et si l'institution avait son propre agent ?</span>
+        <span class="scenario-count">4 idées</span>
+      </div>
+      <div class="scenario-ideas">
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Profileur de voix institutionnelle : apprendre le style de communication de l'institution depuis ses documents passés.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>L'agent rédacteur draft dans le ton établi de l'institution, pas dans un formel générique — voice matching.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Modèle de risque institutionnel : quels sujets/acteurs sont les plus dangereux pour CETTE institution spécifiquement.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Agent playbook : apprendre des crises passées de l'institution et suggérer des réponses analogues.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUCUN LLM FIABLE -->
+    <div class="scenario-block sc-trust">
+      <div class="scenario-header">
+        <span style="font-size: 1.4rem;">🚫</span>
+        <span class="scenario-q">Et si aucun LLM n'était fiable ?</span>
+        <span class="scenario-count">4 idées</span>
+      </div>
+      <div class="scenario-ideas">
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Mode "trust-free" : les LLMs n'extraient que des données structurées, n'interprètent jamais — l'interprétation est réservée à des templates humains.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>LLM-as-judge : un second LLM juge les outputs du premier et émet un score d'hallucination par claim.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Tous les outputs "haute enjeu" passent par une queue de révision humaine OBLIGATOIRE avant stockage ou transmission.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Citation obligatoire : chaque claim de l'agent doit citer un ID de post source — pas de citation = claim invalide.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRISE ÉVITÉE -->
+    <div class="scenario-block sc-prev">
+      <div class="scenario-header">
+        <span style="font-size: 1.4rem;">🛡️</span>
+        <span class="scenario-q">Et si la crise n'avait pas eu lieu ?</span>
+        <span class="scenario-count">3 idées</span>
+      </div>
+      <div class="scenario-ideas">
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Quel signal à t-12h aurait changé la décision institutionnelle ? — construire un module de prévention.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Conseiller de prévention de crise : audit des vulnérabilités institutionnelles AVANT les crises.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Scanner de sensibilité : flag automatique des communications institutionnelles susceptibles de déclencher un backlash.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- UN SEUL AGENT -->
+    <div class="scenario-block sc-mono">
+      <div class="scenario-header">
+        <span style="font-size: 1.4rem;">🧠</span>
+        <span class="scenario-q">Et si un seul agent faisait tout ?</span>
+        <span class="scenario-count">2 idées</span>
+      </div>
+      <div class="scenario-ideas">
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Un mega-prompt monolithique révèle quelle information est essentielle — le distiller pour mieux répartir entre agents spécialisés.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Le mode d'échec d'un agent monolithique est une feature : il révèle où l'information "saigne" entre les axes.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAUVAIS ACTEURS -->
+    <div class="scenario-block sc-bad">
+      <div class="scenario-header">
+        <span style="font-size: 1.4rem;">⚠️</span>
+        <span class="scenario-q">Et si de mauvais acteurs utilisaient le système ?</span>
+        <span class="scenario-count">3 idées</span>
+      </div>
+      <div class="scenario-ideas">
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Robustesse adversariale : le système doit détecter si quelqu'un l'utilise pour FABRIQUER une crise, pas juste l'analyser.</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Agent garde-fou éthique : flag les outputs pouvant être weaponisés (ex: cartographie de coordination utilisable pour cibler des activistes).</span>
+        </div>
+        <div class="scenario-idea">
+          <span class="si-bullet"></span>
+          <span>Politique dual-use : certains outputs (ex: cartes de coordination) réservés à des utilisateurs institutionnels vérifiés.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SYNTHÈSE & ARCHITECTURE
+══════════════════════════════════════════════════════ -->
+<section id="synthesis">
+  <div class="synthesis-inner">
+
+    <div class="synth-header">
+      <h2>Synthèse & Architecture</h2>
+      <p>6 insights clés et le schéma d'architecture centrale émergé de la session</p>
+    </div>
+
+    <!-- Insights -->
+    <div class="insights-grid">
+
+      <div class="insight-card">
+        <div class="insight-num">INSIGHT 01</div>
+        <p>Architecture centrale : Orchestrateur stateful (machine à états de crise) → agents spécialisés (Timeline, Acteur, Narratif, Propagation, Coordination, Sémantique, Stratège, Rédacteur) → Agent Vérificateur transversal.</p>
+        <div class="tag-row">
+          <span class="tag tag-blue">Architecture</span>
+          <span class="tag tag-purple">Multi-agent</span>
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-num">INSIGHT 02</div>
+        <p>Le verrou de confiance est la vérification : construire l'agent vérificateur en premier — tout le reste en dépend pour être crédible.</p>
+        <div class="tag-row">
+          <span class="tag tag-green">Priorité 1</span>
+          <span class="tag tag-orange">Confiance</span>
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-num">INSIGHT 03</div>
+        <p>LangChain/Python > N8N pour ce cas : contrôle total sur la logique d'orchestration, les outils custom (NetworkX, spaCy), et la gestion de la mémoire inter-agents.</p>
+        <div class="tag-row">
+          <span class="tag tag-blue">Tech Stack</span>
+          <span class="tag tag-purple">LangChain</span>
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-num">INSIGHT 04</div>
+        <p>La neutralité n'est pas juste une règle éditoriale — c'est l'avantage compétitif : un outil partisan est inutilisable dans la moitié des contextes.</p>
+        <div class="tag-row">
+          <span class="tag tag-green">Stratégie</span>
+          <span class="tag tag-orange">Marché</span>
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-num">INSIGHT 05</div>
+        <p>Le cas Twitch est à la fois corpus d'analyse ET benchmark d'évaluation — le système doit être évalué sur sa capacité à reconstruire ce cas fidèlement.</p>
+        <div class="tag-row">
+          <span class="tag tag-blue">Evaluation</span>
+          <span class="tag tag-purple">Benchmark</span>
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-num">INSIGHT 06</div>
+        <p>L'architecture en 3 niveaux (fait/narratif/dynamique) doit être strictement séquentielle : aucun agent narratif ne tourne avant que les faits ne soient extraits et vérifiés.</p>
+        <div class="tag-row">
+          <span class="tag tag-green">Process</span>
+          <span class="tag tag-orange">Séquencement</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ARCHITECTURE DIAGRAM -->
+    <div class="arch-diagram">
+      <div class="arch-title">Architecture Système — Vue d'ensemble</div>
+
+      <div class="arch-flow">
+
+        <!-- Crise Input -->
+        <div class="arch-tier-crisis">
+          <div class="crisis-box">
+            💥 Événement Déclencheur<br>
+            <span style="font-size: 0.75rem; opacity: 0.8; font-weight: 400;">Signal viral · API Twitter/X · Données brutes</span>
+          </div>
+        </div>
+
+        <div class="arch-arrow-down"></div>
+
+        <!-- Orchestrateur -->
+        <div class="arch-tier-orch">
+          <div class="orch-box">
+            <div class="orch-box-title">🎛️ ORCHESTRATEUR STATEFUL</div>
+            <div class="orch-box-sub">Machine à états de crise · LangChain/Python</div>
+            <div class="state-chips">
+              <span class="state-chip">ÉTINCELLE</span>
+              <span class="state-chip">IGNITION</span>
+              <span class="state-chip">VIRALITÉ</span>
+              <span class="state-chip">PIC</span>
+              <span class="state-chip">RÉPONSE</span>
+              <span class="state-chip">RETOMBÉE</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-arrow-down"></div>
+
+        <!-- Agents -->
+        <div style="text-align: center; font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Agents Spécialisés</div>
+        <div class="arch-agents-row">
+          <div class="agent-box">
+            <span class="agent-icon">⏱️</span>
+            <span class="agent-name">Timeline</span>
+          </div>
+          <div class="agent-box">
+            <span class="agent-icon">👤</span>
+            <span class="agent-name">Acteur</span>
+          </div>
+          <div class="agent-box">
+            <span class="agent-icon">📊</span>
+            <span class="agent-name">Narratif</span>
+          </div>
+          <div class="agent-box">
+            <span class="agent-icon">🕸️</span>
+            <span class="agent-name">Propagation</span>
+          </div>
+          <div class="agent-box">
+            <span class="agent-icon">🤖</span>
+            <span class="agent-name">Coordination</span>
+          </div>
+          <div class="agent-box">
+            <span class="agent-icon">🔤</span>
+            <span class="agent-name">Sémantique</span>
+          </div>
+          <div class="agent-box">
+            <span class="agent-icon">🧭</span>
+            <span class="agent-name">Stratège</span>
+          </div>
+          <div class="agent-box">
+            <span class="agent-icon">✍️</span>
+            <span class="agent-name">Rédacteur</span>
+          </div>
+        </div>
+
+        <div class="arch-arrow-down" style="background: linear-gradient(180deg, rgba(124,58,237,0.5), rgba(0,255,136,0.5));"></div>
+
+        <!-- Vérificateur -->
+        <div class="arch-tier-verif">
+          <div class="verif-box">
+            <div class="verif-title">
+              <span>🔍</span>
+              <span>AGENT VÉRIFICATEUR TRANSVERSAL</span>
+            </div>
+            <div class="verif-sub">Score de confiance · Détection hallucinations · Citations sources obligatoires</div>
+          </div>
+        </div>
+
+        <div class="arch-arrow-down" style="background: linear-gradient(180deg, rgba(0,255,136,0.5), rgba(255,214,0,0.5));"></div>
+
+        <!-- Human Gate -->
+        <div style="display: flex; justify-content: center; width: 100%;">
+          <div class="human-gate">
+            <div class="human-gate-title">🧑 HUMAN-IN-THE-LOOP OBLIGATOIRE</div>
+            <div class="human-gate-sub">Révision · Validation · Décision — l'agent ne publie jamais seul</div>
+          </div>
+        </div>
+
+        <div class="arch-arrow-down" style="background: linear-gradient(180deg, rgba(255,214,0,0.5), rgba(255,255,255,0.2));"></div>
+
+        <!-- Outputs -->
+        <div style="text-align: center; font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Livrables</div>
+        <div class="arch-outputs">
+          <div class="output-box">📋 Brief Exécutif</div>
+          <div class="output-box">📦 Bundle de Preuves</div>
+          <div class="output-box">✉️ 3 Drafts de Réponse</div>
+          <div class="output-box">📈 Dashboard Vélocité</div>
+          <div class="output-box">📚 Post-Mortem Apprentissage</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Two modes note -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
+      <div style="background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.2); border-radius: 12px; padding: 1.5rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent-blue); margin-bottom: 0.75rem;">Mode Temps-Réel</div>
+        <p style="font-size: 0.875rem; color: var(--text-mid);">Stream processing · Faible latence · Kafka/polling · Triage automatique L1→L2→L3 · Golden hour protocol</p>
+      </div>
+      <div style="background: rgba(124,58,237,0.06); border: 1px solid rgba(124,58,237,0.2); border-radius: 12px; padding: 1.5rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: #a78bfa; margin-bottom: 0.75rem;">Mode Post-Mortem</div>
+        <p style="font-size: 0.875rem; color: var(--text-mid);">Batch processing · Haute qualité · Analyse approfondie · Benchmark vs cas Twitch · Leçons apprises</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-logo">Brainstorming IA · Datathon 2026 · Session autonome · 5 techniques · 115 idées · 24 juin 2026</div>
+  <p style="color: var(--text-dim); font-size: 0.75rem; margin-top: 0.75rem; opacity: 0.5;">Analyse et réponse aux crises virales par agents IA — cas streameuse Twitch</p>
+</footer>
+
+<!-- ── SCRIPTS ── -->
+<script>
+  // Toggle hat sections
+  function toggleHat(header) {
+    const body = header.nextElementSibling;
+    const toggle = header.querySelector('.hat-toggle');
+    if (body.classList.contains('collapsed')) {
+      body.classList.remove('collapsed');
+      toggle.textContent = '▼';
+    } else {
+      body.classList.add('collapsed');
+      toggle.textContent = '▶';
+    }
+  }
+
+  // Generate network nodes in hero
+  (function() {
+    const container = document.getElementById('networkBg');
+    if (!container) return;
+
+    const nodes = [];
+    const edges = [];
+    const nodeCount = 30;
+
+    // Create SVG for edges
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
+    container.appendChild(svg);
+
+    for (let i = 0; i < nodeCount; i++) {
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const size = Math.random() * 6 + 2;
+      const delay = Math.random() * 3;
+      const duration = Math.random() * 2 + 2;
+
+      const colors = ['#00d4ff', '#7c3aed', '#f0047f', '#00ff88'];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+
+      const node = document.createElement('div');
+      node.className = 'node';
+      node.style.cssText = `
+        left: ${x}%;
+        top: ${y}%;
+        width: ${size}px;
+        height: ${size}px;
+        background: ${color};
+        box-shadow: 0 0 ${size * 3}px ${color}88;
+        animation-delay: ${delay}s;
+        animation-duration: ${duration}s;
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.5;
+        animation: pulse-node ${duration}s ease-in-out ${delay}s infinite;
+      `;
+      container.appendChild(node);
+      nodes.push({ x, y, el: node, color });
+    }
+
+    // Draw some edges
+    for (let i = 0; i < nodes.length; i++) {
+      const n1 = nodes[i];
+      // Connect to 1-2 nearest
+      let dists = [];
+      for (let j = 0; j < nodes.length; j++) {
+        if (i === j) continue;
+        const n2 = nodes[j];
+        const d = Math.hypot(n1.x - n2.x, n1.y - n2.y);
+        dists.push({ j, d });
+      }
+      dists.sort((a, b) => a.d - b.d);
+      const connect = dists.slice(0, Math.random() > 0.5 ? 2 : 1);
+      connect.forEach(({ j }) => {
+        const n2 = nodes[j];
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', n1.x + '%');
+        line.setAttribute('y1', n1.y + '%');
+        line.setAttribute('x2', n2.x + '%');
+        line.setAttribute('y2', n2.y + '%');
+        line.setAttribute('stroke', 'rgba(0,212,255,0.08)');
+        line.setAttribute('stroke-width', '0.5');
+        svg.appendChild(line);
+      });
+    }
+  })();
+
+  // Intersection observer for fade-in animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.axiom-card, .mindmap-cluster, .jtbd-card, .scenario-block, .insight-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+
+  // Active nav highlight on scroll
+  const sections = document.querySelectorAll('[id^="t"], #synthesis');
+  const navLinks = document.querySelectorAll('.toc a');
+
+  const sectionObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => {
+          link.style.color = '';
+          link.style.borderColor = 'transparent';
+          link.style.background = '';
+        });
+        const id = entry.target.id;
+        const active = document.querySelector(`.toc a[href="#${id}"]`);
+        if (active) {
+          active.style.color = 'var(--accent-blue)';
+          active.style.borderColor = 'rgba(0,212,255,0.3)';
+          active.style.background = 'rgba(0,212,255,0.05)';
+        }
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(s => sectionObserver.observe(s));
+</script>
+
+</body>
+</html>
