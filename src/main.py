@@ -95,3 +95,22 @@ console.print(
         border_style="green",
     )
 )
+
+# --- Rédacteur ---
+console.rule("[bold magenta]Agent Rédacteur[/bold magenta]")
+state = run_redacteur(state)
+drafts = state["draft_response"] or {}
+
+tonalite_color = {"prudent": "blue", "equilibre": "yellow", "assertif": "red"}
+
+for version in drafts["versions"]:
+    color = tonalite_color.get(version["tonalite"], "white")
+    recommande = " ⭐" if version["tonalite"] == drafts["recommandation"] else ""
+    console.print(
+        Panel(
+            f"{version['corps']}\n\n"
+            f"[bold]Call to action :[/bold] {version['call_to_action']}",
+            title=f"{version['titre']}{recommande} [{version['tonalite']}]",
+            border_style=color,
+        )
+    )
