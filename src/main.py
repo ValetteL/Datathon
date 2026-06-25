@@ -4,35 +4,23 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from agents.analyste import run_analyste
 from agents.redacteur import run_redacteur
-from tools.corpus_loader import load_corpus
-from pipeline.state import CrisisState
-from agents.veille import run_veille
 from agents.stratege import run_stratege
+from agents.veille import run_veille
+from pipeline.state import CrisisState
+from tools.corpus_loader import load_corpus
 
 console = Console()
 load_dotenv()
 
 df = load_corpus("Dataset/data.xlsx")
 
-# --- Mock en attendant l'agent analyse ---
-narratives_mock = {
-    "narratif_dominant": "censure",
-    "repartition": {
-        "censure": 312,
-        "copinage": 87,
-        "defense_ultia": 45,
-        "defense_cnc": 12,
-        "autre": 44,
-    },
-    "source_tweet_ids": ["15427", "2386", "34058"],
-}
-
 state = CrisisState(
     raw_df=df,
     tweets_sample=df.sample(200, random_state=42),
     corpus_config={"evenement": "Affaire Ultia x CNC", "periode": "mars-avril 2026"},
-    narratives=narratives_mock,
+    narratives=None,
     alerts=None,
     human_approved=False,
     strategy_options=None,
@@ -41,15 +29,32 @@ state = CrisisState(
     errors=[],
 )
 
-if state["narratives"] is not None:
-    console.print(
-        Panel(
-            "[bold yellow]⚠ narratives mocké — AgentAnalyste non branché[/bold yellow]\n"
-            "[dim]Les outputs Stratège et Rédacteur sont basés sur des données simulées.[/dim]",
-            border_style="yellow",
-            expand=False,
-        )
+# --- Analyste ---
+console.rule("[bold blue]Agent Analyste[/bold blue]")
+state = run_analyste(state)
+narratives = state["narratives"] or {}
+
+table_narratifs = Table(title="Répartition des narratifs", show_header=True, header_style="bold blue")
+table_narratifs.add_column("Narratif")
+table_narratifs.add_column("Tweets", justify="right")
+repartition = narratives.get("repartition", {})
+total = sum(repartition.values()) or 1
+for narratif, count in sorted(repartition.items(), key=lambda x: -x[1]):
+    pct = count / total * 100
+    table_narratifs.add_row(narratif, f"{count} ({pct:.1f}%)")
+console.print(table_narratifs)
+
+console.print(
+    Panel(
+        f"[bold]Narratif dominant :[/bold] {narratives.get('narratif_dominant', 'N/A')}\n"
+        f"[dim]{len(narratives.get('analyses', []))} tweets classifiés[/dim]",
+        border_style="blue",
+        expand=False,
     )
+)
+
+if state.get("errors"):
+    console.print(f"[yellow]⚠ {len(state['errors'])} erreur(s) de batch — pipeline continue[/yellow]")
 
 # --- Veille ---
 console.rule("[bold cyan]Agent Veille[/bold cyan]")
@@ -75,13 +80,13 @@ console.print(
     )
 )
 
-table = Table(title="Pics détectés", show_header=True, header_style="bold magenta")
-table.add_column("Date")
-table.add_column("Volume", justify="right")
-table.add_column("Top Shares", justify="right")
+table_pics = Table(title="Pics détectés", show_header=True, header_style="bold magenta")
+table_pics.add_column("Date")
+table_pics.add_column("Volume", justify="right")
+table_pics.add_column("Top Shares", justify="right")
 for peak in alerts["peaks"]:
-    table.add_row(peak["date"], str(peak["tweet_count"]), str(peak["top_shares"]))
-console.print(table)
+    table_pics.add_row(peak["date"], str(peak["tweet_count"]), str(peak["top_shares"]))
+console.print(table_pics)
 
 # --- HumanGate ---
 console.rule("[bold yellow]Human Gate[/bold yellow]")
@@ -124,8 +129,6 @@ console.print(
 console.rule("[bold magenta]Agent Rédacteur[/bold magenta]")
 state = run_redacteur(state)
 drafts = state["draft_response"] or {}
-
-tonalite_color = {"prudent": "blue", "equilibre": "yellow", "assertif": "red"}
 
 for version in drafts["versions"]:
     color = tonalite_color.get(version["tonalite"], "white")
