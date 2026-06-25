@@ -11,25 +11,23 @@ from pipeline.state import CrisisState
 from tools.corpus_loader import load_corpus
 from agents.veille import run_veille
 
-# Agents J2 — importés dès que les fichiers sont poussés par les responsables
-try:
-    from agents.analyste import run_analyste   # Ruben (P3) — J2
-except ImportError:
-    def run_analyste(state):
-        raise NotImplementedError("agents/analyste.py manquant — Ruben (P3) l'implémente en J2")
 
-try:
-    from agents.stratege import run_stratege   # Baptiste (P5) — J2
-except ImportError:
-    def run_stratege(state):
-        assert state["human_approved"], "HumanGate non validé."
-        raise NotImplementedError("agents/stratege.py manquant — Baptiste (P5) l'implémente en J2")
+# ── Nœuds placeholder (à remplacer par les vrais agents J2) ──────────────────
 
-try:
-    from agents.redacteur import run_redacteur  # Baptiste (P5) — J2-J3
-except ImportError:
-    def run_redacteur(state):
-        raise NotImplementedError("agents/redacteur.py manquant — Baptiste (P5) l'implémente en J2")
+def run_analyste(state: CrisisState) -> CrisisState:
+    """Nœud AgentAnalyste — à implémenter dans agents/analyste.py (P3, J2)."""
+    raise NotImplementedError("Implémente agents/analyste.py — voir PROJET-ARCHITECTURE.md §5.2")
+
+
+def run_stratege(state: CrisisState) -> CrisisState:
+    """Nœud AgentStratège — à implémenter dans agents/stratege.py (P5, J2)."""
+    assert state["human_approved"], "HumanGate non validé."
+    raise NotImplementedError("Implémente agents/stratege.py — voir PROJET-ARCHITECTURE.md §5.5")
+
+
+def run_redacteur(state: CrisisState) -> CrisisState:
+    """Nœud AgentRédacteur — à implémenter dans agents/redacteur.py (P5, J2-J3)."""
+    raise NotImplementedError("Implémente agents/redacteur.py — voir PROJET-ARCHITECTURE.md §5.6")
 
 
 # ── HumanGate ─────────────────────────────────────────────────────────────────
