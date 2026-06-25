@@ -418,8 +418,12 @@
         <div class="axis-icon">👤</div>
         <div class="axis-title">Acteurs</div>
         <div class="axis-resp">Ruben</div>
-        <div class="axis-body todo">À compléter — top comptes, types (média / influenceur / institution / militant), tweets seeds</div>
-        <span class="tag">EN COURS</span>
+        <div class="axis-body">
+          Vérifié : 9,1% · 10 437 auteurs uniques<br>
+          5 types : vérifié · influenceur · actif · standard · suspect<br>
+          <span style="color:#ef4444;font-size:12px;">Suspects (X Posts ≤ 100) : proxy bot / coordonné</span>
+        </div>
+        <span class="tag" style="background:#14532d;color:#4ade80;">ANALYSÉ ✓</span>
       </div>
 
       <div class="axis-card">
@@ -452,8 +456,12 @@
         <div class="axis-icon">🔗</div>
         <div class="axis-title">Coordination</div>
         <div class="axis-resp">Malo</div>
-        <div class="axis-body todo">À compléter — synchronie, rafales, copier-coller, comptes récents</div>
-        <span class="tag">EN COURS</span>
+        <div class="axis-body">
+          Synchronie · Rapid-fire · Copy-paste<br>
+          Comptes récents (X Posts ≤ 100)<br>
+          <span style="color:#3b82f6;font-size:12px;">Intégré dans agent veille (seuils p95)</span>
+        </div>
+        <span class="tag" style="background:#14532d;color:#4ade80;">INTÉGRÉ ✓</span>
       </div>
 
       <div class="axis-card">
@@ -533,6 +541,97 @@
       </div>
     </div>
   </div>
+  <!-- ── Slide : Acteurs — Louis (J3) ──────────────────────────── -->
+  <div class="slide" id="s_acteurs">
+    <div class="eyebrow">Acteurs — Louis (J3)</div>
+    <h2>Qui parle dans la <span class="accent">crise</span> ?</h2>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:28px;width:100%;max-width:1100px;">
+      <div style="background:#0f1f38;border:1px solid #3b82f6;border-radius:10px;padding:16px 12px;text-align:center;">
+        <div style="font-size:22px;">🏛️</div>
+        <div style="font-size:13px;font-weight:700;color:#3b82f6;margin:8px 0 4px;">Vérifié</div>
+        <div style="font-size:11px;color:#94a3b8;">9,1% des tweets<br>Médias · Institutions</div>
+      </div>
+      <div style="background:#0f1f38;border:1px solid #8b5cf6;border-radius:10px;padding:16px 12px;text-align:center;">
+        <div style="font-size:22px;">⭐</div>
+        <div style="font-size:13px;font-weight:700;color:#8b5cf6;margin:8px 0 4px;">Influenceur</div>
+        <div style="font-size:11px;color:#94a3b8;">&gt; 10k abonnés<br>Poids fort</div>
+      </div>
+      <div style="background:#0f1f38;border:1px solid #10b981;border-radius:10px;padding:16px 12px;text-align:center;">
+        <div style="font-size:22px;">💬</div>
+        <div style="font-size:13px;font-weight:700;color:#10b981;margin:8px 0 4px;">Actif</div>
+        <div style="font-size:11px;color:#94a3b8;">1k–10k abonnés<br>Communautés</div>
+      </div>
+      <div style="background:#0f1f38;border:1px solid #475569;border-radius:10px;padding:16px 12px;text-align:center;">
+        <div style="font-size:22px;">👤</div>
+        <div style="font-size:13px;font-weight:700;color:#94a3b8;margin:8px 0 4px;">Standard</div>
+        <div style="font-size:11px;color:#94a3b8;">&lt; 1k abonnés<br>Masse anonyme</div>
+      </div>
+      <div style="background:#0f1f38;border:1px solid #ef4444;border-radius:10px;padding:16px 12px;text-align:center;">
+        <div style="font-size:22px;">🤖</div>
+        <div style="font-size:13px;font-weight:700;color:#ef4444;margin:8px 0 4px;">Suspect</div>
+        <div style="font-size:11px;color:#94a3b8;">X Posts ≤ 100<br>Bot / récent</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px;width:100%;max-width:1100px;">
+      <div style="background:#111827;border-radius:8px;padding:16px 18px;font-size:13px;color:#94a3b8;line-height:1.7;">
+        <strong style="color:#f1f5f9;">Amplification</strong><br>
+        Les comptes standard &amp; suspect portent la masse RT — c'est la foule anonyme qui propage.
+      </div>
+      <div style="background:#111827;border-radius:8px;padding:16px 18px;font-size:13px;color:#94a3b8;line-height:1.7;">
+        <strong style="color:#f1f5f9;">Signal suspect</strong><br>
+        Comptes X Posts ≤ 100 : RT ratio potentiellement anormal — à croiser avec rapid-fire et copy-paste.
+      </div>
+      <div style="background:#111827;border-radius:8px;padding:16px 18px;font-size:13px;color:#94a3b8;line-height:1.7;">
+        <strong style="color:#f1f5f9;">Diagnostic crise</strong><br>
+        Vérifiés + influenceurs + masse = organique.<br>Masse seule + rapid-fire = campagne coordonnée.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Slide : Agent Veille — seuils dynamiques + coordination ── -->
+  <div class="slide" id="s_veille">
+    <div class="eyebrow">Agent Veille — J3</div>
+    <h2>Détection <span class="accent">scalable</span> de crise</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px;width:100%;max-width:1000px;">
+      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:22px;">
+        <div style="font-size:16px;font-weight:700;color:#3b82f6;margin-bottom:10px;">📊 Seuils auto-calibrés</div>
+        <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
+          <span style="color:#f1f5f9;">Volume</span> : mean + 2σ — adapté au corpus<br>
+          <span style="color:#f1f5f9;">Viraux</span> : percentile p90/p75 sur non-nuls<br>
+          <span style="color:#f1f5f9;">Granularité</span> : daily / weekly / monthly auto<br>
+          <span style="color:#f1f5f9;">Cache</span> : hash dataset → pas de recalcul inutile
+        </div>
+      </div>
+      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:22px;">
+        <div style="font-size:16px;font-weight:700;color:#f59e0b;margin-bottom:10px;">🔗 Signaux de coordination</div>
+        <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
+          <span style="color:#f1f5f9;">Synchronicité</span> : rafales multi-comptes (p95)<br>
+          <span style="color:#f1f5f9;">Rapid-fire</span> : posts enchaînés en &lt; 60s<br>
+          <span style="color:#f1f5f9;">Copy-paste</span> : messages identiques inter-comptes<br>
+          <span style="color:#ef4444;">Volume + Coordination → CRITICAL</span>
+        </div>
+      </div>
+      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:22px;">
+        <div style="font-size:16px;font-weight:700;color:#10b981;margin-bottom:10px;">⚡ Niveaux d'alerte</div>
+        <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
+          <span style="color:#ef4444;font-weight:700;">CRITICAL</span> : volume + coordination<br>
+          <span style="color:#f59e0b;font-weight:700;">HIGH</span>&nbsp;&nbsp;&nbsp;&nbsp; : pic de volume<br>
+          <span style="color:#3b82f6;font-weight:700;">MEDIUM</span>&nbsp;&nbsp; : viral ou coordination seule<br>
+          <span style="color:#94a3b8;font-weight:700;">LOW</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : pas de signal anormal
+        </div>
+      </div>
+      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:22px;">
+        <div style="font-size:16px;font-weight:700;color:#8b5cf6;margin-bottom:10px;">📌 RT ratio — recadrage</div>
+        <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
+          RT &gt; 90% sans pic ≠ précurseur<br>
+          → <span style="color:#f1f5f9;">signal de persistance</span> : crise qui dure<br>
+          Les pics précèdent les hauts RT — pas l'inverse.<br>
+          Utile pour détecter le "feu sous la cendre".
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Slide 5 : Pipeline ──────────────────────────────────── -->
   <div class="slide" id="s5">
     <div class="eyebrow">Notre solution</div>
@@ -556,7 +655,7 @@
         <span class="badge">✓</span>
         <div class="pipe-icon">📡</div>
         <div class="pipe-name">Veille</div>
-        <div class="pipe-out">Alertes · Pics</div>
+        <div class="pipe-out">Alertes · Pics · Coordination</div>
       </div>
       <div class="pipe-arrow">›</div>
       <div class="pipe-node gate">
@@ -592,9 +691,23 @@
       <span class="var">corpus_config</span> <span class="kw">=</span> {<br>
       &nbsp;&nbsp;<span class="str">"evenement"</span>: <span class="hi">"Nouvelle crise"</span>,&nbsp;&nbsp;<span class="cmt"># ← seul ce param change</span><br>
       &nbsp;&nbsp;<span class="str">"periode"</span>: <span class="str">"2026-01-01 / 2026-02-28"</span>,<br>
-      &nbsp;&nbsp;<span class="str">"mots_cles"</span>: [<span class="str">"coca"</span>, <span class="str">"boycott"</span>, <span class="str">"..."</span>],<br>
       }<br>
-      <span class="cmt"># Le pipeline tourne tel quel.</span>
+      <span class="cmt"># Seuils auto-calibrés sur le nouveau corpus (mean+2σ, p95).</span><br>
+      <span class="cmt"># Cache par empreinte dataset — pas de recalcul inutile.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px;width:100%;max-width:900px;font-size:12px;">
+      <div style="background:#0a0f1e;border:1px solid #1e3a5f;border-radius:8px;padding:12px 14px;color:#94a3b8;line-height:1.6;">
+        <span style="color:#3b82f6;font-weight:700;">Volume</span><br>
+        Basé sur la distribution du corpus · daily / weekly / monthly selon le span
+      </div>
+      <div style="background:#0a0f1e;border:1px solid #1e3a5f;border-radius:8px;padding:12px 14px;color:#94a3b8;line-height:1.6;">
+        <span style="color:#f59e0b;font-weight:700;">Coordination</span><br>
+        Synchronicité p95 · Rapid-fire 1% comptes · Copy-paste inter-comptes
+      </div>
+      <div style="background:#0a0f1e;border:1px solid #1e3a5f;border-radius:8px;padding:12px 14px;color:#94a3b8;line-height:1.6;">
+        <span style="color:#10b981;font-weight:700;">Acteurs</span><br>
+        Proxy statistique : followers · verified · X Posts — sans LLM
+      </div>
     </div>
     <div class="examples">
       <span class="ex-pill active">Affaire Ultia × CNC ✓</span>

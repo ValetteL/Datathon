@@ -25,11 +25,14 @@ Datathon/                         ← racine — lancer les scripts depuis ici
 │   │   ├── prompts/
 │   │   │   └── prompts.py        # System prompts + factory LLM
 │   │   └── tools/
-│   │       └── corpus_loader.py
+│   │       ├── corpus_loader.py
+│   │       └── thresholds.py         # Seuils dynamiques auto-calibrés (avec cache)
 │   ├── notebooks/
 │   │   ├── J1_exploration.ipynb
 │   │   ├── J2_narratifs.ipynb
-│   │   └── tuning_veille.ipynb   # Calibration seuils veille
+│   │   ├── J3_acteurs.ipynb          # Analyse acteurs (proxy stat, 5 types, sans LLM)
+│   │   ├── Exploration_coord_sem.ipynb
+│   │   └── tuning_veille.ipynb       # Exploration calibration seuils (référence)
 │   └── requirements.txt
 ├── frontend/                     # React 19 + Vite (scaffold, en cours)
 ├── Dataset/                      # gitignored — data.xlsx à placer ici
@@ -110,7 +113,7 @@ Le pipeline s'exécute en 4 étapes :
   ↓
 🔍 Agent Analyste  — classifie les tweets par narratif (censure / copinage / …)
   ↓
-📡 Agent Veille    — détecte les pics de volume et tweets viraux
+📡 Agent Veille    — détecte les pics de volume, tweets viraux et signaux de coordination
   ↓
 🧑‍⚖️ Human Gate   — l'opérateur valide ou rejette l'analyse (obligatoire)
   ↓
@@ -161,19 +164,31 @@ Remplacer `Dataset/data.xlsx`. Le `corpus_loader` attend ces colonnes :
 | `Likes`, `Shares` | Métriques d'engagement |
 | `Sentiment` | neutral / negative / positive |
 | `postID` | Identifiant unique du tweet |
-| `Author`, `X Followers`, `X Verified` | Profil de l'auteur |
+| `Author`, `X Followers`, `X Verified`, `X Posts`, `X Author ID` | Profil de l'auteur (X Posts utilisé pour proxy acteur suspect) |
 
 ### Recalibrer les seuils de l'Agent Veille
 
-Les seuils actuels sont calibrés sur la crise Ultia × CNC.
-Pour un nouveau corpus, lancer le notebook de calibration :
+**Aucune action requise** — les seuils se calibrent automatiquement au premier lancement.
 
-```bash
-jupyter notebook backend/notebooks/tuning_veille.ipynb
+`tools/thresholds.py` calcule les seuils statistiques au démarrage du pipeline et met le résultat en cache dans `outputs/thresholds_<hash>.json`. Si le corpus change, le cache est invalidé et le calcul relance seul.
+
+Seuils calculés automatiquement :
+- **Volume** : `mean + 2σ` sur la distribution journalière (granularité `daily` / `weekly` / `monthly` selon la durée du corpus)
+- **Viraux** : percentile p90 sur Likes non-nuls, p75 sur Shares non-nuls
+- **Coordination** : synchronicité p95, seuil rapid-fire 1% des auteurs, copy-paste inter-comptes
+
+Pour inspecter ou forcer un recalcul :
+
+```python
+from src.tools.thresholds import compute_thresholds
+from src.tools.corpus_loader import load_corpus
+
+df = load_corpus("Dataset/data.xlsx")
+t = compute_thresholds(df, force=True)   # force=True ignore le cache
+print(t)
 ```
 
-Il calcule des seuils statistiques (`mean + 2σ`, percentiles sur non-nuls)
-et exporte `outputs/thresholds_veille.json`.
+Le notebook `tuning_veille.ipynb` reste utile pour **explorer** la calibration et visualiser les distributions — mais il n'est plus nécessaire pour le fonctionnement du pipeline.
 
 ---
 
