@@ -1,6 +1,5 @@
 from __future__ import annotations
 import pandas as pd
-from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 from prompts.prompts import get_system_prompt, get_llm
@@ -103,7 +102,6 @@ def run_veille(state: CrisisState) -> CrisisState:
         )
 
     # ── 6. LLM : génère uniquement le résumé textuel ─────────────────────────
-    parser = PydanticOutputParser(pydantic_object=AlertSignal)
     llm = get_llm()
 
     prompt = ChatPromptTemplate.from_messages([
@@ -112,20 +110,17 @@ def run_veille(state: CrisisState) -> CrisisState:
             "Voici les données de propagation calculées par pandas (ne pas inventer de chiffres) :\n\n"
             "Jours de pic (volume > {vol_threshold} tweets/j) :\n{temporal_summary}\n\n"
             "Évolution du sentiment négatif :\n{sentiment_summary}\n\n"
-            "Tweets vraiement viraux (Likes ≥ {likes_t} ou Shares ≥ {shares_t}) : {viral_count} tweets\n"
+            "Tweets vraiment viraux (Likes ≥ {likes_t} ou Shares ≥ {shares_t}) : {viral_count} tweets\n"
             "Leurs postIDs : {viral_ids}\n\n"
             "À partir de ces données, génère un AlertSignal avec :\n"
             "- is_alert={is_alert}\n"
             "- alert_level adapté à l'intensité (low/medium/high/critical)\n"
             "- la liste des PeakEvent issus des données ci-dessus\n"
-            "- un summary factuel de 2-3 phrases sur la dynamique de propagation\n"
-            "{format_instructions}"
+            "- un summary factuel de 2-3 phrases sur la dynamique de propagation"
         )),
     ])
 
-    chain = prompt | llm | parser
-
-    result: AlertSignal = chain.invoke({
+    result: AlertSignal = (prompt | llm.with_structured_output(AlertSignal)).invoke({
         "vol_threshold": VOLUME_ALERT_PER_DAY,
         "temporal_summary": temporal_summary,
         "sentiment_summary": sentiment_summary,
@@ -134,7 +129,6 @@ def run_veille(state: CrisisState) -> CrisisState:
         "viral_count": len(viral_tweets),
         "viral_ids": str(viral_ids),
         "is_alert": is_alert,
-        "format_instructions": parser.get_format_instructions(),
     })
 
     # Override des champs calculés par pandas (ne jamais laisser le LLM inventer des chiffres)

@@ -2,7 +2,6 @@ from __future__ import annotations
 from collections import Counter
 import pandas as pd
 from langchain_core.language_models import BaseChatModel
-from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 from prompts.prompts import get_system_prompt, get_llm
@@ -45,7 +44,7 @@ FEW_SHOT_EXAMPLES = """Exemples de calibration :
 - "Ultia n'a rien fait de mal, on s'acharne sur eux sans preuve" → narratif=defense_ultia, acteur_type=influenceur
 - "Je n'ai pas d'avis tranché, attendons d'en savoir plus" → narratif=autre, acteur_type=anonyme"""
 
-BATCH_SIZE = 15  # borné pour tenir dans la limite d'output des modèles
+BATCH_SIZE = 25  # avec with_structured_output, pas de schema dans le prompt — on peut monter
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -53,35 +52,30 @@ BATCH_SIZE = 15  # borné pour tenir dans la limite d'output des modèles
 def _format_tweets(batch: pd.DataFrame) -> str:
     lines = []
     for _, row in batch.iterrows():
-        text = row.get("message_normalizer") or row.get("Full Text") or ""
+        text = (row.get("message_normalizer") or row.get("Full Text") or "")[:200]
         lines.append(
-            f"[{row['postID']}] @{row['Author']} "
-            f"(followers:{row['X Followers']}, verified:{row['X Verified']}, "
-            f"type:{row['Engagement Type']})\n{text}"
+            f"[{row['postID']}] {row['Engagement Type']}|v:{row['X Verified']}|{text}"
         )
-    return "\n\n".join(lines)
+    return "\n".join(lines)
 
 
 def _classify_batch(
     batch: pd.DataFrame,
     evenement: str,
     periode: str,
-    llm: BaseChatModel,
-    prompt: ChatPromptTemplate,
-    parser: PydanticOutputParser,
+    chain,
 ) -> list[TweetAnalysis]:
-    """Classifie un batch de tweets. LLM et prompt sont passés depuis run_analyste."""
+    """Classifie un batch de tweets. chain est partagé depuis run_analyste."""
     if batch.empty:
         return []
 
-    result: BatchResult = (prompt | llm | parser).invoke({
+    result: BatchResult = chain.invoke({
         "evenement": evenement,
         "periode": periode,
         "narratifs": ", ".join(NARRATIFS_VALIDES),
         "acteurs": ", ".join(ACTEURS_VALIDES),
         "few_shot": FEW_SHOT_EXAMPLES,
         "tweets": _format_tweets(batch),
-        "format_instructions": parser.get_format_instructions(),
     })
 
     return result.analyses
@@ -106,9 +100,8 @@ def run_analyste(state: CrisisState) -> CrisisState:
     evenement = config.get("evenement", "crise virale")
     periode   = config.get("periode", "")
 
-    # LLM et prompt instanciés une seule fois, partagés entre tous les batches
-    llm    = get_llm()
-    parser = PydanticOutputParser(pydantic_object=BatchResult)
+    # LLM et chain instanciés une seule fois, partagés entre tous les batches
+    llm = get_llm()
     prompt = ChatPromptTemplate.from_messages([
         ("system", get_system_prompt("analyste")),
         ("human", (
@@ -116,13 +109,13 @@ def run_analyste(state: CrisisState) -> CrisisState:
             "Catégories de narratif (utilise EXACTEMENT ces libellés) : {narratifs}\n"
             "Catégories de type d'acteur : {acteurs}\n\n"
             "{few_shot}\n\n"
-            "Tweets à classifier :\n\n{tweets}\n\n"
+            "Tweets à classifier (format: [postID] TYPE|v:VERIFIED|texte) :\n{tweets}\n\n"
             "Retourne un TweetAnalysis par tweet (n'en invente pas d'autres). "
             "tweet_id = postID exact entre crochets. "
-            "source_tweet_ids doit contenir au minimum le tweet_id lui-même.\n"
-            "{format_instructions}"
+            "source_tweet_ids doit contenir au minimum le tweet_id lui-même."
         )),
     ])
+    chain = prompt | llm.with_structured_output(BatchResult)
 
     all_analyses: list[TweetAnalysis] = []
     errors: list[str] = list(state.get("errors", []))
@@ -131,7 +124,7 @@ def run_analyste(state: CrisisState) -> CrisisState:
         batch = sample.iloc[start:start + BATCH_SIZE]
         try:
             all_analyses.extend(
-                _classify_batch(batch, evenement, periode, llm, prompt, parser)
+                _classify_batch(batch, evenement, periode, chain)
             )
         except Exception as exc:
             errors.append(f"[analyste] batch {start}-{start + len(batch)} : {exc}")
