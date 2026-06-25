@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from pipeline.state import CrisisState
 from prompts.prompts import get_llm, get_system_prompt
@@ -29,7 +28,6 @@ def run_redacteur(state: CrisisState) -> CrisisState:
         for opt in strategy.get("options", [])
     )
 
-    parser = PydanticOutputParser(pydantic_object=DraftCommunique)
     llm = get_llm()
 
     prompt = ChatPromptTemplate.from_messages(
@@ -43,21 +41,17 @@ def run_redacteur(state: CrisisState) -> CrisisState:
                     "Options stratégiques validées :\n{options}\n\n"
                     "Rédige 3 versions de communiqué (prudent, équilibré, assertif). "
                     "Chaque version doit être factuelle, citer des source_tweet_ids, "
-                    "et ne pas prendre position politique.\n"
-                    "{format_instructions}"
+                    "et ne pas prendre position politique."
                 ),
             ),
         ]
     )
 
-    chain = prompt | llm | parser
-
-    result: DraftCommunique = chain.invoke(
+    result: DraftCommunique = (prompt | llm.with_structured_output(DraftCommunique)).invoke(
         {
             "evenement": config.get("evenement", ""),
             "narratif_dominant": narratives.get("narratif_dominant", ""),
             "options": options_text,
-            "format_instructions": parser.get_format_instructions(),
         }
     )
 

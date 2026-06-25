@@ -1,6 +1,5 @@
 from langchain_core.prompts.chat import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from langchain_core.output_parsers import PydanticOutputParser
 from pipeline.state import CrisisState
 from prompts.prompts import get_llm, get_system_prompt
 
@@ -28,7 +27,6 @@ def run_stratege(state: CrisisState) -> CrisisState:
     alerts = state["alerts"] or {}
     config = state["corpus_config"]
 
-    parser = PydanticOutputParser(pydantic_object=StrategyOptions)
     llm = get_llm()
 
     prompt = ChatPromptTemplate.from_messages(
@@ -42,23 +40,19 @@ def run_stratege(state: CrisisState) -> CrisisState:
                     "Répartition des narratifs = {repartition}\n"
                     "Niveau d'alerte : {alert_level}\n"
                     "Résumé de la crise : {alert_summary}\n\n"
-                    "Propose 3 options de réponse institutionnelle (prudent/équilibré/assertif) avec leurs risques. Chaque option doit citer des source_tweet_ids.\n"
-                    "{format_instructions}"
+                    "Propose 3 options de réponse institutionnelle (prudent/équilibré/assertif) avec leurs risques. Chaque option doit citer des source_tweet_ids."
                 ),
             ),
         ]
     )
 
-    chain = prompt | llm | parser
-
-    result: StrategyOptions = chain.invoke(
+    result: StrategyOptions = (prompt | llm.with_structured_output(StrategyOptions)).invoke(
         {
             "evenement": config.get("evenement", ""),
             "narratif_dominant": narratives.get("narratif_dominant", ""),
             "repartition": str(narratives.get("repartition", {})),
             "alert_level": alerts.get("alert_level", ""),
             "alert_summary": alerts.get("summary", ""),
-            "format_instructions": parser.get_format_instructions(),
         }
     )
 
