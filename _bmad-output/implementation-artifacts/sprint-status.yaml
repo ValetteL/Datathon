@@ -25,15 +25,18 @@
 #
 # WORKFLOW NOTES:
 # ===============
-# - AgentVeille (agents/veille.py) est DÉJÀ IMPLÉMENTÉ — Story 2.2 = validation uniquement
-# - HumanGate (pipeline/graph.py) est DÉJÀ IMPLÉMENTÉ
-# - CrisisState TypedDict (pipeline/state.py) est DÉJÀ IMPLÉMENTÉ
-# - load_corpus() (tools/corpus_loader.py) est DÉJÀ IMPLÉMENTÉ
-# - Stories prioritaires bloquantes : 2.1 (Analyste) et 2.3 (Stratège) — démarrer J2 par là
+# - AgentVeille (agents/veille.py) est IMPLÉMENTÉ ✅
+# - AgentStratège (src/agents/stratege.py) est IMPLÉMENTÉ ✅ — Baptiste (P5)
+# - AgentRédacteur (src/agents/redacteur.py) est IMPLÉMENTÉ ✅ — Baptiste (P5)
+# - HumanGate (pipeline/graph.py) est IMPLÉMENTÉ ✅
+# - CrisisState TypedDict (pipeline/state.py) est IMPLÉMENTÉ ✅
+# - load_corpus() (tools/corpus_loader.py) est IMPLÉMENTÉ ✅
+# - Demo interactive disponible : python src/main.py (narratives mockées)
+# - Story prioritaire bloquante : 2.1 (AgentAnalyste — Ruben P3)
 # - Toutes les stories d'un même jour peuvent être parallélisées (6 personnes)
 
 generated: "2026-06-24"
-last_updated: "2026-06-24"
+last_updated: "2026-06-25"
 project: "Datathon CNC x Ultia"
 project_key: NOKEY
 tracking_system: file-system
@@ -42,39 +45,39 @@ story_location: _bmad-output/implementation-artifacts
 development_status:
 
   # ── EPIC 1 : J1 — Comprendre la crise ─────────────────────────────────────
-  epic-1: backlog
+  epic-1: done
 
-  1-1-setup-environnement-et-prise-en-main-du-repo: backlog
+  1-1-setup-environnement-et-prise-en-main-du-repo: done
   # Responsable : Toute l'équipe | ~30 min | Démarrer J1 par ici
   # Succès : load_corpus() → "35396 tweets chargés" dans Colab de chaque membre
 
-  1-2-exploration-temporelle-timeline-de-la-crise: backlog
-  # Responsable : P1 | Journée J1
-  # Succès : graphique volume/heure + 3-5 pics annotés avec événements réels
+  1-2-exploration-temporelle-timeline-de-la-crise: done
+  # Responsable : Alexis (P1) | Journée J1
+  # Succès : fig_timeline.png générée, pic 7303 tweets le 27 mars confirmé
 
-  1-3-exploration-sentiments-et-narratifs: backlog
-  # Responsable : P2 | Journée J1
-  # Succès : distribution sentiment + taxonomie 4-6 narratifs + exemples tweets
+  1-3-exploration-sentiments-et-narratifs: in-progress
+  # Responsable : Franck (P2) | Journée J1
+  # narratif_dominant et terme_dominant encore null dans slides/chiffres_cles.json
 
-  1-4-exploration-acteurs-et-propagation: backlog
-  # Responsable : P3 | Journée J1
-  # Succès : top 20 comptes classifiés + tweets seeds identifiés
+  1-4-exploration-acteurs-et-propagation: in-progress
+  # Responsable : Ruben (P3) | Journée J1
+  # top_acteur_type encore null dans slides/chiffres_cles.json
 
-  1-5-exploration-coordination-et-semantique: backlog
-  # Responsable : P4 | Journée J1
-  # Succès : indicateurs de coordination + top 30 termes + glissements sémantiques
+  1-5-exploration-coordination-et-semantique: in-progress
+  # Responsable : Malo (P4) | Journée J1
+  # note_coordination encore null dans slides/chiffres_cles.json
 
-  1-6-synthese-grille-5-axes-et-slides-j1: backlog
-  # Responsable : P5 + Louis | Fin J1
-  # Succès : slides prêts avec grille 5 axes + timeline + 2-3 chiffres clé
+  1-6-synthese-grille-5-axes-et-slides-j1: done
+  # Responsable : Louis | Fin J1
+  # notebooks/J1_exploration.ipynb + slides/figures/ + slides/chiffres_cles.json générés
 
   epic-1-retrospective: optional
 
   # ── EPIC 2 : J2 — Concevoir et prototyper les agents ─────────────────────
-  epic-2: backlog
+  epic-2: in-progress
 
-  2-1-implementer-agent-analyste: review
-  # Responsable : P3 | Priorité J2 HAUTE — bloquant pour Story 2.6
+  2-1-implementer-agent-analyste: backlog
+  # Responsable : Ruben (P3) | Priorité J2 HAUTE — dernier bloc bloquant
   # Succès : run_analyste(state) → NarrativeResult valide sur 500 tweets
   # Référence : PROJET-ARCHITECTURE.md §5.2 + taxonomie narratifs de Story 1.3
   # État : agents/analyste.py codé + câblé dans pipeline/graph.py + logique
@@ -85,26 +88,24 @@ development_status:
   #        tweets_sample (500), valider la taxonomie avec les exemples P2 (1.3),
   #        enrichir le few-shot dans agents/analyste.py.
 
-  2-2-valider-et-calibrer-agent-veille-sur-corpus-reel: backlog
-  # Responsable : P4 | AgentVeille DÉJÀ IMPLÉMENTÉ — validation uniquement
+  2-2-valider-et-calibrer-agent-veille-sur-corpus-reel: in-progress
+  # Responsable : Malo (P4) | AgentVeille DÉJÀ IMPLÉMENTÉ — validation uniquement
   # Succès : alert_level="critical", pic 27 mars (7303 tweets/j) détecté
 
-  2-3-implementer-agent-stratege: backlog
-  # Responsable : P5 | Priorité J2 HAUTE — bloquant pour Story 2.4 et 2.6
-  # Succès : run_stratege(state) → 3 options avec risques/avantages + source_tweet_ids
-  # Référence : PROJET-ARCHITECTURE.md §5.5 | EXIGE human_approved=True (AD-7)
+  2-3-implementer-agent-stratege: done
+  # Responsable : Baptiste (P5) | src/agents/stratege.py — StrategyOptions Pydantic
+  # Succès : run_stratege(state) → 3 options avec risques/avantages + source_tweet_ids ✅
 
-  2-4-implementer-agent-redacteur: backlog
-  # Responsable : P5 (ou P6 si surcharge) | Après Story 2.3
-  # Succès : run_redacteur(state) → 3 drafts <280 chars, ton neutre (AD-4)
-  # Référence : PROJET-ARCHITECTURE.md §5.6
+  2-4-implementer-agent-redacteur: done
+  # Responsable : Baptiste (P5) | src/agents/redacteur.py — DraftCommunique Pydantic
+  # Succès : run_redacteur(state) → 3 drafts (prudent/équilibré/assertif) ✅
 
-  2-5-tests-agents-sur-echantillon-et-documentation-methodo: backlog
-  # Responsable : P1 + P2 | En parallèle de 2.1/2.3 dès qu'un agent est prêt
-  # Succès : notebooks/J2_tests_agents.ipynb tourne sans erreur sur 100 tweets
+  2-5-tests-agents-sur-echantillon-et-documentation-methodo: in-progress
+  # Responsable : Alexis (P1) + Franck (P2) | src/main.py disponible pour tests
+  # Demo interactive Veille+Stratège+Rédacteur opérationnelle (narratives mockées)
 
   2-6-integration-pipeline-premier-run-complet: backlog
-  # Responsable : Louis + P3 | En fin de J2, après Stories 2.1/2.2/2.3/2.4
+  # Responsable : Louis + Ruben (P3) | Bloqué par Story 2.1 (AgentAnalyste)
   # Succès : pipeline end-to-end sur 500 tweets, 4 JSON dans outputs/, HumanGate validé
 
   epic-2-retrospective: optional

@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.language_models import BaseChatModel
 
 
 NEUTRALITY_SYSTEM_PROMPT = """Tu es un assistant d'analyse de dynamiques informationnelles, spécialisé en gestion de crise sur les réseaux sociaux.
@@ -50,12 +50,46 @@ def get_system_prompt(agent_name: str) -> str:
 def get_llm(
     model: str | None = None,
     temperature: float = 0.2,
-) -> ChatGoogleGenerativeAI:
+) -> BaseChatModel:
     """
     Factory LLM unique — tous les agents passent par ici.
-    Modèle résolu dans cet ordre : argument > GEMINI_MODEL (.env) > gemini-2.0-flash.
-    Clé lue depuis GOOGLE_API_KEY (variable d'environnement ou Colab Secrets).
+
+    Provider résolu depuis IA_PROVIDER (.env) : GROQ (défaut) ou GEMINI.
+    Modèle résolu dans cet ordre : argument > variable d'env du provider > défaut du provider.
+
+    GROQ  : GROQ_MODEL   (défaut : llama-3.3-70b-versatile)
+    GEMINI: GEMINI_MODEL (défaut : gemini-2.0-flash)
     """
+    provider = os.environ.get("IA_PROVIDER", "GEMINI").upper()
+
+    if provider == "GROQ":
+        return _build_groq(model, temperature)
+
+    if provider == "GEMINI":
+        return _build_gemini(model, temperature)
+
+    raise EnvironmentError(
+        f"IA_PROVIDER='{provider}' non reconnu. Valeurs acceptées : GROQ, GEMINI."
+    )
+
+
+def _build_groq(model: str | None, temperature: float) -> BaseChatModel:
+    from langchain_groq import ChatGroq
+
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        raise EnvironmentError(
+            "GROQ_API_KEY non définie.\n"
+            "Local : ajouter GROQ_API_KEY=ta_clé dans .env\n"
+            "Colab  : Secrets > GROQ_API_KEY"
+        )
+    resolved_model = model or os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+    return ChatGroq(model=resolved_model, temperature=temperature, api_key=api_key)
+
+
+def _build_gemini(model: str | None, temperature: float) -> BaseChatModel:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         raise EnvironmentError(
