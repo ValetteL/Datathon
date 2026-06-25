@@ -150,17 +150,18 @@ Le pipeline LangGraph est câblé et l'AgentVeille est opérationnel. Les agents
 load_corpus() → CrisisState → AgentAnalyste → AgentVeille → [HumanGate] → AgentStratège → AgentRédacteur → outputs/
 ```
 
-| Composant | Fichier | Statut J1 |
+| Composant | Fichier | Statut |
 |---|---|---|
 | Chargeur corpus | `tools/corpus_loader.py` | ✅ Implémenté |
 | État partagé | `pipeline/state.py` | ✅ Implémenté |
-| Orchestrateur | `pipeline/graph.py` | ✅ Câblé — imports conditionnels J2 |
+| Orchestrateur | `pipeline/graph.py` | ✅ Câblé — imports conditionnels |
 | AgentVeille | `agents/veille.py` | ✅ Implémenté et testé |
 | AgentAnalyste | `agents/analyste.py` | ⬜ À créer — **Ruben (P3), J2** |
-| AgentStratège | `agents/stratege.py` | ⬜ À créer — **Baptiste (P5), J2** |
-| AgentRédacteur | `agents/redacteur.py` | ⬜ À créer — **Baptiste (P5), J2** |
+| AgentStratège | `src/agents/stratege.py` | ✅ Implémenté — **Baptiste (P5)** |
+| AgentRédacteur | `src/agents/redacteur.py` | ✅ Implémenté — **Baptiste (P5)** |
 | HumanGate | `pipeline/graph.py` | ✅ Implémenté |
 | Neutralité éditoriale | `prompts/prompts.py` | ✅ Centralisée |
+| Demo interactive | `src/main.py` | ✅ Opérationnel (narratives mockées) |
 
 > `pipeline/graph.py` utilise des imports conditionnels : le pipeline démarre sans erreur même si les agents J2 n'existent pas encore. Dès que Ruben ou Baptiste pousse son fichier sur le repo, le pipeline le charge automatiquement.
 
@@ -222,13 +223,16 @@ Le pipeline charge n'importe quel corpus au format `data.xlsx`, les agents s'ada
 
 ## 8. Priorités J2
 
-| Qui | Quoi | Livrable |
+| Qui | Quoi | Statut |
 |---|---|---|
-| **Ruben (P3)** | Implémenter `agents/analyste.py` | Fichier pushé sur le repo |
-| **Baptiste (P5)** | Implémenter `agents/stratege.py` + `agents/redacteur.py` | 2 fichiers pushés sur le repo |
-| **Louis (P6)** | Intégration pipeline complet | Pipeline end-to-end opérationnel |
-| **Malo (P4)** | Valider `agents/veille.py` sur corpus réel, ajuster seuils | Seuils validés + `note_coordination` dans JSON |
-| **Franck (P2)** | Finaliser analyse narratifs + few-shot examples | Few-shot prêts pour calibrer Ruben |
-| **Alexis (P1)** | Tests pipeline J2 | Bugs remontés, rapport de test |
+| **Baptiste (P5)** | Implémenter `agents/stratege.py` + `agents/redacteur.py` | ✅ Fait (`src/agents/`) |
+| **Ruben (P3)** | Implémenter `agents/analyste.py` | ⬜ Dernier bloc manquant |
+| **Louis** | Intégration pipeline complet | ⏳ En attente AgentAnalyste |
+| **Malo (P4)** | Valider `agents/veille.py` sur corpus réel, ajuster seuils | ⬜ `note_coordination` dans JSON |
+| **Franck (P2)** | Finaliser analyse narratifs + few-shot examples | ⬜ `narratif_dominant` + `terme_dominant` dans JSON |
+| **Alexis (P1)** | Tests pipeline J2 | ⬜ À faire dès que AgentAnalyste est pushé |
+
+> **Demo intermédiaire disponible** : `python src/main.py` tourne avec un `narratives` mocké.
+> Permet de tester Veille → Stratège → Rédacteur sans attendre l'AgentAnalyste.
 
 Suivi sprint → `_bmad-output/implementation-artifacts/sprint-status.yaml`

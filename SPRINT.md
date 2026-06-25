@@ -37,15 +37,15 @@ Un pipeline multi-agents qui analyse la crise virale CNC × Ultia automatiquemen
 ```
 Corpus (35k tweets)
       ↓
-AgentAnalyste   → classe chaque tweet par narratif (censure / copinage / ...)
+AgentAnalyste   → classe chaque tweet par narratif (censure / copinage / ...)  ⬜ TODO — Ruben
       ↓
-AgentVeille     → détecte les pics, les tweets viraux, les alertes ✅ FAIT
+AgentVeille     → détecte les pics, les tweets viraux, les alertes              ✅ FAIT
       ↓
 [Validation humaine obligatoire]
       ↓
-AgentStratège   → propose 3 options de réponse institutionnelle
+AgentStratège   → propose 3 options de réponse institutionnelle                ✅ FAIT — Baptiste
       ↓
-AgentRédacteur  → rédige les drafts de communiqué
+AgentRédacteur  → rédige les drafts de communiqué                              ✅ FAIT — Baptiste
       ↓
 outputs/        → JSON + drafts prêts pour la démo
 ```
@@ -58,14 +58,14 @@ Architecture complète : [`_bmad-output/architecture/.../PROJET-ARCHITECTURE.md`
 
 | Personne | J1 — Comprendre | J2 — Prototyper | J3 — Restituer |
 |---|---|---|---|
-| **P1** | Exploration timeline & volume | Tests agents sur échantillon | Support run corpus |
-| **P2** | Exploration sentiments & narratifs | Tests agents + doc méthodo | Slides pitch |
-| **P3** | Exploration acteurs & propagation | **AgentAnalyste** ⚡ | Intégration pipeline |
-| **P4** | Exploration coordination & sémantique | Valider AgentVeille | Run corpus entier |
-| **P5** | — | **AgentStratège + AgentRédacteur** ⚡ | Intégration pipeline |
-| **Louis** | Synthèse grille 5 axes + slides | Intégration pipeline complète | HumanGate + démo |
+| **Alexis (P1)** | Exploration timeline & volume ✅ | Tests agents sur échantillon | Support run corpus |
+| **Franck (P2)** | Exploration sentiments & narratifs | Tests agents + doc méthodo | Slides pitch |
+| **Ruben (P3)** | Exploration acteurs & propagation | **AgentAnalyste** ⚡ | Intégration pipeline |
+| **Malo (P4)** | Exploration coordination & sémantique | Valider AgentVeille | Run corpus entier |
+| **Baptiste (P5)** | — | **AgentStratège ✅ + AgentRédacteur ✅** | Intégration pipeline |
+| **Louis** | Synthèse grille 5 axes + slides ✅ | Intégration pipeline complète | HumanGate + démo |
 
-⚡ = Stories bloquantes J2 — à démarrer en priorité dès le matin
+⚡ = Stories bloquantes J2 — AgentAnalyste (Ruben) est le dernier bloc manquant
 
 ---
 
@@ -114,5 +114,7 @@ Pour voir le détail complet de chaque story (tâches, critères de succès) :
 
 - Architecture & décisions techniques : [`PROJET-ARCHITECTURE.md`](_bmad-output/architecture/architecture-datathon-cnc-ultia-2026-06-24/PROJET-ARCHITECTURE.md)
 - Méthode BMAD & installation : [`GUIDE_BMAD.md`](GUIDE_BMAD.md)
-- Code déjà fait (lire avant de recoder) : `agents/veille.py`, `pipeline/graph.py`, `tools/corpus_loader.py`
+- Code déjà fait (lire avant de recoder) : `agents/veille.py`, `src/agents/stratege.py`, `src/agents/redacteur.py`, `pipeline/graph.py`, `tools/corpus_loader.py`
+- Demo interactive : `python src/main.py` (Veille → HumanGate → Stratège → Rédacteur, narratives mockées)
+- Rapport J1 + chiffres clés : `docs/RAPPORT_J1.md`, `slides/chiffres_cles.json`
 - Chef de projet : Louis
