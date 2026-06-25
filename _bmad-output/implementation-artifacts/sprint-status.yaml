@@ -80,6 +80,13 @@ development_status:
   # Responsable : Ruben (P3) | Priorité J2 HAUTE — dernier bloc bloquant
   # Succès : run_analyste(state) → NarrativeResult valide sur 500 tweets
   # Référence : PROJET-ARCHITECTURE.md §5.2 + taxonomie narratifs de Story 1.3
+  # État : agents/analyste.py codé + câblé dans pipeline/graph.py + logique
+  #        (parsing, batching, garde-fou anti-hallucination) validée avec un
+  #        faux LLM (FakeListChatModel). PAS testé avec un vrai appel Gemini —
+  #        aucune GOOGLE_API_KEY disponible dans cet environnement.
+  #        Reste à faire par l'équipe : configurer .env, lancer sur le vrai
+  #        tweets_sample (500), valider la taxonomie avec les exemples P2 (1.3),
+  #        enrichir le few-shot dans agents/analyste.py.
 
   2-2-valider-et-calibrer-agent-veille-sur-corpus-reel: in-progress
   # Responsable : Malo (P4) | AgentVeille DÉJÀ IMPLÉMENTÉ — validation uniquement
