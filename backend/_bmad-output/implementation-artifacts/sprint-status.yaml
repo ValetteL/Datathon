@@ -1,0 +1,132 @@
+# generated: 2026-06-24
+# last_updated: 2026-06-24
+# project: Datathon CNC x Ultia — Système multi-agents d'analyse de crise virale
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review
+#   - done: Story completed and validated
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - AgentVeille (agents/veille.py) est IMPLÉMENTÉ ✅
+# - AgentStratège (src/agents/stratege.py) est IMPLÉMENTÉ ✅ — Baptiste (P5)
+# - AgentRédacteur (src/agents/redacteur.py) est IMPLÉMENTÉ ✅ — Baptiste (P5)
+# - HumanGate (pipeline/graph.py) est IMPLÉMENTÉ ✅
+# - CrisisState TypedDict (pipeline/state.py) est IMPLÉMENTÉ ✅
+# - load_corpus() (tools/corpus_loader.py) est IMPLÉMENTÉ ✅
+# - Demo interactive disponible : python src/main.py (narratives mockées)
+# - Story prioritaire bloquante : 2.1 (AgentAnalyste — Ruben P3)
+# - Toutes les stories d'un même jour peuvent être parallélisées (6 personnes)
+
+generated: "2026-06-24"
+last_updated: "2026-06-25"
+project: "Datathon CNC x Ultia"
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+
+  # ── EPIC 1 : J1 — Comprendre la crise ─────────────────────────────────────
+  epic-1: done
+
+  1-1-setup-environnement-et-prise-en-main-du-repo: done
+  # Responsable : Toute l'équipe | ~30 min | Démarrer J1 par ici
+  # Succès : load_corpus() → "35396 tweets chargés" dans Colab de chaque membre
+
+  1-2-exploration-temporelle-timeline-de-la-crise: done
+  # Responsable : Alexis (P1) | Journée J1
+  # Succès : fig_timeline.png générée, pic 7303 tweets le 27 mars confirmé
+
+  1-3-exploration-sentiments-et-narratifs: in-progress
+  # Responsable : Franck (P2) | Journée J1
+  # narratif_dominant et terme_dominant encore null dans slides/chiffres_cles.json
+
+  1-4-exploration-acteurs-et-propagation: in-progress
+  # Responsable : Ruben (P3) | Journée J1
+  # top_acteur_type encore null dans slides/chiffres_cles.json
+
+  1-5-exploration-coordination-et-semantique: in-progress
+  # Responsable : Malo (P4) | Journée J1
+  # note_coordination encore null dans slides/chiffres_cles.json
+
+  1-6-synthese-grille-5-axes-et-slides-j1: done
+  # Responsable : Louis | Fin J1
+  # notebooks/J1_exploration.ipynb + slides/figures/ + slides/chiffres_cles.json générés
+
+  epic-1-retrospective: optional
+
+  # ── EPIC 2 : J2 — Concevoir et prototyper les agents ─────────────────────
+  epic-2: in-progress
+
+  2-1-implementer-agent-analyste: backlog
+  # Responsable : Ruben (P3) | Priorité J2 HAUTE — dernier bloc bloquant
+  # Succès : run_analyste(state) → NarrativeResult valide sur 500 tweets
+  # Référence : PROJET-ARCHITECTURE.md §5.2 + taxonomie narratifs de Story 1.3
+  # État : agents/analyste.py codé + câblé dans pipeline/graph.py + logique
+  #        (parsing, batching, garde-fou anti-hallucination) validée avec un
+  #        faux LLM (FakeListChatModel). PAS testé avec un vrai appel Gemini —
+  #        aucune GOOGLE_API_KEY disponible dans cet environnement.
+  #        Reste à faire par l'équipe : configurer .env, lancer sur le vrai
+  #        tweets_sample (500), valider la taxonomie avec les exemples P2 (1.3),
+  #        enrichir le few-shot dans agents/analyste.py.
+
+  2-2-valider-et-calibrer-agent-veille-sur-corpus-reel: in-progress
+  # Responsable : Malo (P4) | AgentVeille DÉJÀ IMPLÉMENTÉ — validation uniquement
+  # Succès : alert_level="critical", pic 27 mars (7303 tweets/j) détecté
+
+  2-3-implementer-agent-stratege: done
+  # Responsable : Baptiste (P5) | src/agents/stratege.py — StrategyOptions Pydantic
+  # Succès : run_stratege(state) → 3 options avec risques/avantages + source_tweet_ids ✅
+
+  2-4-implementer-agent-redacteur: done
+  # Responsable : Baptiste (P5) | src/agents/redacteur.py — DraftCommunique Pydantic
+  # Succès : run_redacteur(state) → 3 drafts (prudent/équilibré/assertif) ✅
+
+  2-5-tests-agents-sur-echantillon-et-documentation-methodo: in-progress
+  # Responsable : Alexis (P1) + Franck (P2) | src/main.py disponible pour tests
+  # Demo interactive Veille+Stratège+Rédacteur opérationnelle (narratives mockées)
+
+  2-6-integration-pipeline-premier-run-complet: backlog
+  # Responsable : Louis + Ruben (P3) | Bloqué par Story 2.1 (AgentAnalyste)
+  # Succès : pipeline end-to-end sur 500 tweets, 4 JSON dans outputs/, HumanGate validé
+
+  epic-2-retrospective: optional
+
+  # ── EPIC 3 : J3 — Orchestrer et restituer ────────────────────────────────
+  epic-3: backlog
+
+  3-1-run-complet-sur-corpus-entier: backlog
+  # Responsable : P3 + P4 | Début J3
+  # Succès : pipeline tourne sur 1000-2000 tweets représentatifs, outputs cohérents
+
+  3-2-validation-human-gate-et-ajustements-finaux: backlog
+  # Responsable : Louis + toute l'équipe | Milieu J3
+  # Succès : équipe valide NarrativeResult + AlertSignal, pipeline approuvé et relancé
+
+  3-3-finalisation-slides-et-narration-pitch: backlog
+  # Responsable : P2 + Louis | En parallèle de 3.1
+  # Succès : 10 slides prêts avec vrais chiffres et vrais outputs agents
+
+  3-4-repetition-demo-et-demo-finale: backlog
+  # Responsable : Toute l'équipe | Fin J3
+  # Succès : démo live <10 min, plan B prêt (outputs JSON pré-sauvegardés)
+
+  epic-3-retrospective: optional

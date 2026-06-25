@@ -6,7 +6,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from tools.corpus_loader import load_corpus
+try:
+	from tools.corpus_loader import load_corpus
+except ModuleNotFoundError:
+	from src.tools.corpus_loader import load_corpus
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "outputs" / "coord_sem"
 
@@ -364,7 +367,7 @@ def semantic(data: pd.DataFrame, plot: bool = False):
 
 
 def main():
-	data = load_corpus()
+	data = load_corpus("../Dataset/data.xlsx")
 	data = data.drop(["Impressions", "Gender"], axis=1)  # Données non exploitables
 	data = data.drop(["City", "City Code"], axis=1)  # Trop de valeurs manquantes pour les villes
 	data = data.drop(["Domain", "Language", "Country"], axis=1)  # Valeur constante dans le dataset pour ce cas

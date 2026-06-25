@@ -5,12 +5,17 @@
   "periode_fin": "2026-05-01",
   "pic_date": "2026-03-27",
   "pic_volume_jour": 7303,
-  "pct_retweets": null,
-  "narratif_dominant": null,
-  "pct_negatif": null,
+  "pct_retweets": 0.858,
+  "narratif_dominant": "Extrême Droite / Politique",
+  "pct_negatif": 0.3068,
   "top_acteur_type": null,
-  "nb_comptes_uniques": null,
-  "pct_comptes_verified": null,
+  "nb_comptes_uniques": 10437,
+  "pct_comptes_verified": 0.0914,
   "note_coordination": null,
-  "terme_dominant": null
+  "terme_dominant": "#vachealait",
+  "engagement_negatif_moyen": 20.3,
+  "narratif_extreme_droite": 15261,
+  "narratif_copinage": 12441,
+  "narratif_defense_ultia": 3893,
+  "narratif_censure": 248
 }
