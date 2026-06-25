@@ -1,4 +1,7 @@
+import json
+import os
 import uuid
+from time import perf_counter
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
@@ -29,25 +32,33 @@ state = CrisisState(
     errors=[],
 )
 
-# --- Analyste ---
+console.print(f"\n[dim]Run ID : {state['run_id']}[/dim]\n")
+timings: dict[str, float] = {}
+
+# ── Agent Analyste ────────────────────────────────────────────────────────────
 console.rule("[bold blue]Agent Analyste[/bold blue]")
-state = run_analyste(state)
+t0 = perf_counter()
+with console.status("[blue]Classification des tweets en cours…[/blue]", spinner="dots"):
+    state = run_analyste(state)
+timings["analyste"] = perf_counter() - t0
+
 narratives = state["narratives"] or {}
+repartition = narratives.get("repartition", {})
+total = sum(repartition.values()) or 1
 
 table_narratifs = Table(title="Répartition des narratifs", show_header=True, header_style="bold blue")
 table_narratifs.add_column("Narratif")
 table_narratifs.add_column("Tweets", justify="right")
-repartition = narratives.get("repartition", {})
-total = sum(repartition.values()) or 1
+table_narratifs.add_column("%", justify="right")
 for narratif, count in sorted(repartition.items(), key=lambda x: -x[1]):
-    pct = count / total * 100
-    table_narratifs.add_row(narratif, f"{count} ({pct:.1f}%)")
+    table_narratifs.add_row(narratif, str(count), f"{count / total * 100:.1f}%")
 console.print(table_narratifs)
 
 console.print(
     Panel(
         f"[bold]Narratif dominant :[/bold] {narratives.get('narratif_dominant', 'N/A')}\n"
-        f"[dim]{len(narratives.get('analyses', []))} tweets classifiés[/dim]",
+        f"[dim]{len(narratives.get('analyses', []))} tweets classifiés "
+        f"en {timings['analyste']:.1f}s[/dim]",
         border_style="blue",
         expand=False,
     )
@@ -56,17 +67,15 @@ console.print(
 if state.get("errors"):
     console.print(f"[yellow]⚠ {len(state['errors'])} erreur(s) de batch — pipeline continue[/yellow]")
 
-# --- Veille ---
+# ── Agent Veille ──────────────────────────────────────────────────────────────
 console.rule("[bold cyan]Agent Veille[/bold cyan]")
-state = run_veille(state)
-alerts = state["alerts"] or {}
+t0 = perf_counter()
+with console.status("[cyan]Détection des pics et alertes…[/cyan]", spinner="dots"):
+    state = run_veille(state)
+timings["veille"] = perf_counter() - t0
 
-level_color = {
-    "low": "green",
-    "medium": "yellow",
-    "high": "red",
-    "critical": "bold red",
-}
+alerts = state["alerts"] or {}
+level_color = {"low": "green", "medium": "yellow", "high": "red", "critical": "bold red"}
 color = level_color.get(alerts["alert_level"], "white")
 
 console.print(
@@ -74,7 +83,8 @@ console.print(
         f"[{color}]Niveau : {alerts['alert_level'].upper()}[/{color}]\n\n"
         f"{alerts['summary']}\n\n"
         f"[dim]Tweets viraux : {alerts['threshold_breaches']['viral_tweets_count']} | "
-        f"Pic journalier : {alerts['threshold_breaches']['max_daily_volume']} tweets[/dim]",
+        f"Pic journalier : {alerts['threshold_breaches']['max_daily_volume']} tweets | "
+        f"{timings['veille']:.1f}s[/dim]",
         title="Résultat Veille",
         border_style=color,
     )
@@ -88,7 +98,7 @@ for peak in alerts["peaks"]:
     table_pics.add_row(peak["date"], str(peak["tweet_count"]), str(peak["top_shares"]))
 console.print(table_pics)
 
-# --- HumanGate ---
+# ── Human Gate ────────────────────────────────────────────────────────────────
 console.rule("[bold yellow]Human Gate[/bold yellow]")
 reponse = console.input("[yellow]Valider l'analyse ? (oui/non) : [/yellow]")
 state["human_approved"] = reponse.lower() in ("oui", "o", "yes", "y")
@@ -97,11 +107,14 @@ if not state["human_approved"]:
     console.print("[red]Analyse rejetée. Pipeline arrêté.[/red]")
     exit()
 
-# --- Stratège ---
+# ── Agent Stratège ────────────────────────────────────────────────────────────
 console.rule("[bold green]Agent Stratège[/bold green]")
-state = run_stratege(state)
-options = state["strategy_options"] or {}
+t0 = perf_counter()
+with console.status("[green]Génération des options de réponse…[/green]", spinner="dots"):
+    state = run_stratege(state)
+timings["stratege"] = perf_counter() - t0
 
+options = state["strategy_options"] or {}
 tonalite_color = {"prudent": "blue", "equilibre": "yellow", "assertif": "red"}
 
 for opt in options["options"]:
@@ -120,14 +133,18 @@ for opt in options["options"]:
 console.print(
     Panel(
         f"[italic]{options['justification']}[/italic]",
-        title="Recommandation",
+        title=f"Recommandation  [dim]({timings['stratege']:.1f}s)[/dim]",
         border_style="green",
     )
 )
 
-# --- Rédacteur ---
+# ── Agent Rédacteur ───────────────────────────────────────────────────────────
 console.rule("[bold magenta]Agent Rédacteur[/bold magenta]")
-state = run_redacteur(state)
+t0 = perf_counter()
+with console.status("[magenta]Rédaction des communiqués…[/magenta]", spinner="dots"):
+    state = run_redacteur(state)
+timings["redacteur"] = perf_counter() - t0
+
 drafts = state["draft_response"] or {}
 
 for version in drafts["versions"]:
@@ -141,3 +158,43 @@ for version in drafts["versions"]:
             border_style=color,
         )
     )
+
+# ── Sauvegarde JSON ───────────────────────────────────────────────────────────
+os.makedirs("outputs", exist_ok=True)
+run_id = state["run_id"]
+saved: list[str] = []
+for key, filename in [
+    ("narratives",       f"narratives_{run_id}.json"),
+    ("alerts",           f"alerts_{run_id}.json"),
+    ("strategy_options", f"strategy_{run_id}.json"),
+    ("draft_response",   f"drafts_{run_id}.json"),
+]:
+    if state.get(key):
+        path = f"outputs/{filename}"
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(state[key], f, ensure_ascii=False, indent=2)
+        saved.append(path)
+
+# ── Récap final ───────────────────────────────────────────────────────────────
+console.rule("[bold white]Récapitulatif[/bold white]")
+
+recap = Table(show_header=False, box=None, padding=(0, 2))
+recap.add_column(style="dim")
+recap.add_column()
+recap.add_row("Run ID",            state["run_id"])
+recap.add_row("Tweets analysés",   str(len(narratives.get("analyses", []))))
+recap.add_row("Narratif dominant", narratives.get("narratif_dominant", "N/A"))
+recap.add_row("Niveau d'alerte",   alerts.get("alert_level", "N/A").upper())
+recap.add_row("Option recommandée", options.get("option_recommandee", "N/A"))
+recap.add_row("Tonalité recommandée", drafts.get("recommandation", "N/A"))
+recap.add_row(
+    "Temps total",
+    f"{sum(timings.values()):.1f}s  "
+    f"[dim](analyste {timings['analyste']:.0f}s · veille {timings['veille']:.0f}s · "
+    f"stratège {timings['stratege']:.0f}s · rédacteur {timings['redacteur']:.0f}s)[/dim]",
+)
+
+console.print(Panel(recap, title="Pipeline terminé", border_style="white"))
+
+if saved:
+    console.print(f"[dim]Outputs sauvegardés : {', '.join(saved)}[/dim]\n")
