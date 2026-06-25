@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from agents.redacteur import run_redacteur
 from tools.corpus_loader import load_corpus
 from pipeline.state import CrisisState
 from agents.veille import run_veille
@@ -14,11 +15,24 @@ load_dotenv()
 
 df = load_corpus("Dataset/data.xlsx")
 
+# --- Mock en attendant l'agent analyse ---
+narratives_mock = {
+    "narratif_dominant": "censure",
+    "repartition": {
+        "censure": 312,
+        "copinage": 87,
+        "defense_ultia": 45,
+        "defense_cnc": 12,
+        "autre": 44,
+    },
+    "source_tweet_ids": ["15427", "2386", "34058"],
+}
+
 state = CrisisState(
     raw_df=df,
     tweets_sample=df.sample(200, random_state=42),
     corpus_config={"evenement": "Affaire Ultia x CNC", "periode": "mars-avril 2026"},
-    narratives=None,
+    narratives=narratives_mock,
     alerts=None,
     human_approved=False,
     strategy_options=None,
@@ -26,6 +40,16 @@ state = CrisisState(
     run_id=str(uuid.uuid4())[:8],
     errors=[],
 )
+
+if state["narratives"] is not None:
+    console.print(
+        Panel(
+            "[bold yellow]⚠ narratives mocké — AgentAnalyste non branché[/bold yellow]\n"
+            "[dim]Les outputs Stratège et Rédacteur sont basés sur des données simulées.[/dim]",
+            border_style="yellow",
+            expand=False,
+        )
+    )
 
 # --- Veille ---
 console.rule("[bold cyan]Agent Veille[/bold cyan]")
