@@ -46,7 +46,9 @@ narratives = state["narratives"] or {}
 repartition = narratives.get("repartition", {})
 total = sum(repartition.values()) or 1
 
-table_narratifs = Table(title="Répartition des narratifs", show_header=True, header_style="bold blue")
+table_narratifs = Table(
+    title="Répartition des narratifs", show_header=True, header_style="bold blue"
+)
 table_narratifs.add_column("Narratif")
 table_narratifs.add_column("Tweets", justify="right")
 table_narratifs.add_column("%", justify="right")
@@ -65,7 +67,9 @@ console.print(
 )
 
 if state.get("errors"):
-    console.print(f"[yellow]⚠ {len(state['errors'])} erreur(s) de batch — pipeline continue[/yellow]")
+    console.print(
+        f"[yellow]⚠ {len(state['errors'])} erreur(s) de batch — pipeline continue[/yellow]"
+    )
 
 # ── Agent Veille ──────────────────────────────────────────────────────────────
 console.rule("[bold cyan]Agent Veille[/bold cyan]")
@@ -75,7 +79,12 @@ with console.status("[cyan]Détection des pics et alertes…[/cyan]", spinner="d
 timings["veille"] = perf_counter() - t0
 
 alerts = state["alerts"] or {}
-level_color = {"low": "green", "medium": "yellow", "high": "red", "critical": "bold red"}
+level_color = {
+    "low": "green",
+    "medium": "yellow",
+    "high": "red",
+    "critical": "bold red",
+}
 color = level_color.get(alerts["alert_level"], "white")
 
 console.print(
@@ -110,7 +119,9 @@ if not state["human_approved"]:
 # ── Agent Stratège ────────────────────────────────────────────────────────────
 console.rule("[bold green]Agent Stratège[/bold green]")
 t0 = perf_counter()
-with console.status("[green]Génération des options de réponse…[/green]", spinner="dots"):
+with console.status(
+    "[green]Génération des options de réponse…[/green]", spinner="dots"
+):
     state = run_stratege(state)
 timings["stratege"] = perf_counter() - t0
 
@@ -164,10 +175,10 @@ os.makedirs("outputs", exist_ok=True)
 run_id = state["run_id"]
 saved: list[str] = []
 for key, filename in [
-    ("narratives",       f"narratives_{run_id}.json"),
-    ("alerts",           f"alerts_{run_id}.json"),
+    ("narratives", f"narratives_{run_id}.json"),
+    ("alerts", f"alerts_{run_id}.json"),
     ("strategy_options", f"strategy_{run_id}.json"),
-    ("draft_response",   f"drafts_{run_id}.json"),
+    ("draft_response", f"drafts_{run_id}.json"),
 ]:
     if state.get(key):
         path = f"outputs/{filename}"
@@ -181,10 +192,10 @@ console.rule("[bold white]Récapitulatif[/bold white]")
 recap = Table(show_header=False, box=None, padding=(0, 2))
 recap.add_column(style="dim")
 recap.add_column()
-recap.add_row("Run ID",            state["run_id"])
-recap.add_row("Tweets analysés",   str(len(narratives.get("analyses", []))))
+recap.add_row("Run ID", state["run_id"])
+recap.add_row("Tweets analysés", str(len(narratives.get("analyses", []))))
 recap.add_row("Narratif dominant", narratives.get("narratif_dominant", "N/A"))
-recap.add_row("Niveau d'alerte",   alerts.get("alert_level", "N/A").upper())
+recap.add_row("Niveau d'alerte", alerts.get("alert_level", "N/A").upper())
 recap.add_row("Option recommandée", options.get("option_recommandee", "N/A"))
 recap.add_row("Tonalité recommandée", drafts.get("recommandation", "N/A"))
 recap.add_row(
