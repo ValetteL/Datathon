@@ -72,8 +72,15 @@ def _save_fig(fig, name: str) -> None:
 	path = OUTPUT_DIR / name
 	fig.tight_layout()
 	fig.savefig(path, dpi=120)
-	plt.close(fig)
 	print(f"[plot] {path}")
+	# get_ipython() only exists inside a notebook/IPython session -> show inline there,
+	# but stay silent (no GUI pop-up) when run as a plain script.
+	try:
+		get_ipython()
+		plt.show()
+	except NameError:
+		pass
+	plt.close(fig)
 
 
 def _word_counts(texts, min_len: int = 3) -> Counter:
