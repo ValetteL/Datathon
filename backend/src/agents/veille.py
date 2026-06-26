@@ -2,23 +2,29 @@ from __future__ import annotations
 import pandas as pd
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from prompts.prompts import get_system_prompt, get_llm
-from pipeline.state import CrisisState
+from src.prompts.prompts import get_system_prompt, get_llm
+from src.pipeline.state import CrisisState
 
 
 class PeakEvent(BaseModel):
     date: str = Field(description="Date du pic (YYYY-MM-DD)")
     tweet_count: int = Field(description="Nombre de tweets ce jour-là")
     top_shares: int = Field(description="Valeur max de Shares ce jour-là")
-    source_tweet_ids: list[str] = Field(description="postIDs des tweets les plus partagés")
+    source_tweet_ids: list[str] = Field(
+        description="postIDs des tweets les plus partagés"
+    )
 
 
 class AlertSignal(BaseModel):
     is_alert: bool
     alert_level: str = Field(description="low | medium | high | critical")
     peaks: list[PeakEvent]
-    threshold_breaches: dict = Field(description="Métriques et valeurs ayant dépassé les seuils")
-    summary: str = Field(description="Synthèse factuelle de la dynamique de propagation")
+    threshold_breaches: dict = Field(
+        description="Métriques et valeurs ayant dépassé les seuils"
+    )
+    summary: str = Field(
+        description="Synthèse factuelle de la dynamique de propagation"
+    )
     source_tweet_ids: list[str]
 
 
@@ -41,11 +47,11 @@ class AlertSignal(BaseModel):
 #   → Reach (39.9% non-nuls, corrélé à Impressions, 20k doublons)
 #   → Hashtags (95.7% vides)
 
-VOLUME_ALERT_PER_HOUR = 300    # ~2% des heures dépassent ce seuil sur le corpus
-VOLUME_ALERT_PER_DAY  = 2_000  # pic observé : 7 303 le 27 mars
-RETWEET_RATIO_ALERT   = 0.90   # >90% de RT = phase d'amplification massive
-VIRAL_LIKES_THRESHOLD = 50     # un tweet avec >50 likes dans ce corpus est vraiment viral
-VIRAL_SHARES_THRESHOLD = 20    # idem pour les shares
+VOLUME_ALERT_PER_HOUR = 300  # ~2% des heures dépassent ce seuil sur le corpus
+VOLUME_ALERT_PER_DAY = 2_000  # pic observé : 7 303 le 27 mars
+RETWEET_RATIO_ALERT = 0.90  # >90% de RT = phase d'amplification massive
+VIRAL_LIKES_THRESHOLD = 50  # un tweet avec >50 likes dans ce corpus est vraiment viral
+VIRAL_SHARES_THRESHOLD = 20  # idem pour les shares
 
 
 def run_veille(state: CrisisState) -> CrisisState:
@@ -53,25 +59,21 @@ def run_veille(state: CrisisState) -> CrisisState:
 
     # ── 1. Volume horaire et journalier ───────────────────────────────────────
     df["_hour"] = df["Date"].dt.floor("h")
-    df["_day"]  = df["Date"].dt.date
+    df["_day"] = df["Date"].dt.date
 
     hourly_vol = df.groupby("_hour").size().rename("count")
-    daily_vol  = df.groupby("_day").size().rename("count")
+    daily_vol = df.groupby("_day").size().rename("count")
 
-    peak_days  = daily_vol[daily_vol > VOLUME_ALERT_PER_DAY].sort_values(ascending=False)
+    peak_days = daily_vol[daily_vol > VOLUME_ALERT_PER_DAY].sort_values(ascending=False)
 
     # ── 2. Tweets vraiment viraux (Likes ou Shares > seuil) ──────────────────
     viral_tweets = df[
-        (df["Likes"] >= VIRAL_LIKES_THRESHOLD) |
-        (df["Shares"] >= VIRAL_SHARES_THRESHOLD)
+        (df["Likes"] >= VIRAL_LIKES_THRESHOLD)
+        | (df["Shares"] >= VIRAL_SHARES_THRESHOLD)
     ].sort_values("Shares", ascending=False)
 
     # ── 4. Sentiment par jour (évolution du ton) ──────────────────────────────
-    sentiment_daily = (
-        df.groupby(["_day", "Sentiment"])
-        .size()
-        .unstack(fill_value=0)
-    )
+    sentiment_daily = df.groupby(["_day", "Sentiment"]).size().unstack(fill_value=0)
 
     # ── 5. Construction du résumé pour le LLM ─────────────────────────────────
     is_alert = len(peak_days) > 0 or len(viral_tweets) > 0
@@ -80,12 +82,16 @@ def run_veille(state: CrisisState) -> CrisisState:
     for day in list(peak_days.index)[:5]:
         day_df = df[df["_day"] == day]
         top_viral = day_df.nlargest(3, "Shares")
-        peak_events_data.append({
-            "date": str(day),
-            "tweet_count": int(daily_vol[day]),
-            "retweet_ratio": round(float((day_df["Engagement Type"] == "RETWEET").mean()), 2),
-            "source_tweet_ids": top_viral["postID"].tolist(),
-        })
+        peak_events_data.append(
+            {
+                "date": str(day),
+                "tweet_count": int(daily_vol[day]),
+                "retweet_ratio": round(
+                    float((day_df["Engagement Type"] == "RETWEET").mean()), 2
+                ),
+                "source_tweet_ids": top_viral["postID"].tolist(),
+            }
+        )
 
     viral_ids = viral_tweets["postID"].head(10).tolist()
 
@@ -104,32 +110,39 @@ def run_veille(state: CrisisState) -> CrisisState:
     # ── 6. LLM : génère uniquement le résumé textuel ─────────────────────────
     llm = get_llm()
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", get_system_prompt("veille")),
-        ("human", (
-            "Voici les données de propagation calculées par pandas (ne pas inventer de chiffres) :\n\n"
-            "Jours de pic (volume > {vol_threshold} tweets/j) :\n{temporal_summary}\n\n"
-            "Évolution du sentiment négatif :\n{sentiment_summary}\n\n"
-            "Tweets vraiment viraux (Likes ≥ {likes_t} ou Shares ≥ {shares_t}) : {viral_count} tweets\n"
-            "Leurs postIDs : {viral_ids}\n\n"
-            "À partir de ces données, génère un AlertSignal avec :\n"
-            "- is_alert={is_alert}\n"
-            "- alert_level adapté à l'intensité (low/medium/high/critical)\n"
-            "- la liste des PeakEvent issus des données ci-dessus\n"
-            "- un summary factuel de 2-3 phrases sur la dynamique de propagation"
-        )),
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", get_system_prompt("veille")),
+            (
+                "human",
+                (
+                    "Voici les données de propagation calculées par pandas (ne pas inventer de chiffres) :\n\n"
+                    "Jours de pic (volume > {vol_threshold} tweets/j) :\n{temporal_summary}\n\n"
+                    "Évolution du sentiment négatif :\n{sentiment_summary}\n\n"
+                    "Tweets vraiment viraux (Likes ≥ {likes_t} ou Shares ≥ {shares_t}) : {viral_count} tweets\n"
+                    "Leurs postIDs : {viral_ids}\n\n"
+                    "À partir de ces données, génère un AlertSignal avec :\n"
+                    "- is_alert={is_alert}\n"
+                    "- alert_level adapté à l'intensité (low/medium/high/critical)\n"
+                    "- la liste des PeakEvent issus des données ci-dessus\n"
+                    "- un summary factuel de 2-3 phrases sur la dynamique de propagation"
+                ),
+            ),
+        ]
+    )
 
-    result: AlertSignal = (prompt | llm.with_structured_output(AlertSignal)).invoke({
-        "vol_threshold": VOLUME_ALERT_PER_DAY,
-        "temporal_summary": temporal_summary,
-        "sentiment_summary": sentiment_summary,
-        "likes_t": VIRAL_LIKES_THRESHOLD,
-        "shares_t": VIRAL_SHARES_THRESHOLD,
-        "viral_count": len(viral_tweets),
-        "viral_ids": str(viral_ids),
-        "is_alert": is_alert,
-    })
+    result: AlertSignal = (prompt | llm.with_structured_output(AlertSignal)).invoke(
+        {
+            "vol_threshold": VOLUME_ALERT_PER_DAY,
+            "temporal_summary": temporal_summary,
+            "sentiment_summary": sentiment_summary,
+            "likes_t": VIRAL_LIKES_THRESHOLD,
+            "shares_t": VIRAL_SHARES_THRESHOLD,
+            "viral_count": len(viral_tweets),
+            "viral_ids": str(viral_ids),
+            "is_alert": is_alert,
+        }
+    )
 
     # Override des champs calculés par pandas (ne jamais laisser le LLM inventer des chiffres)
     result.is_alert = is_alert

@@ -4,16 +4,21 @@ import pandas as pd
 from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from prompts.prompts import get_system_prompt, get_llm
-from pipeline.state import CrisisState
+from src.prompts.prompts import get_system_prompt, get_llm
+from src.pipeline.state import CrisisState
 
 
 # ── Schémas Pydantic ──────────────────────────────────────────────────────────
 
+
 class TweetAnalysis(BaseModel):
     tweet_id: str = Field(description="postID du tweet analysé")
-    narratif: str = Field(description="censure | copinage | defense_ultia | defense_cnc | autre")
-    acteur_type: str = Field(description="media | militant | influenceur | anonyme | institution")
+    narratif: str = Field(
+        description="censure | copinage | defense_ultia | defense_cnc | autre"
+    )
+    acteur_type: str = Field(
+        description="media | militant | influenceur | anonyme | institution"
+    )
     source_tweet_ids: list[str] = Field(
         description="Liste des postID cités comme sources (au minimum le tweet_id lui-même)"
     )
@@ -22,12 +27,15 @@ class TweetAnalysis(BaseModel):
 class BatchResult(BaseModel):
     """Schema minimal envoyé au LLM — uniquement ce qu'il doit produire.
     Les champs agrégés (narratif_dominant, repartition) sont calculés en Python."""
+
     analyses: list[TweetAnalysis]
 
 
 class NarrativeResult(BaseModel):
     analyses: list[TweetAnalysis]
-    narratif_dominant: str = Field(description="Le narratif le plus fréquent dans l'échantillon")
+    narratif_dominant: str = Field(
+        description="Le narratif le plus fréquent dans l'échantillon"
+    )
     repartition: dict = Field(description="Comptage par catégorie de narratif")
     source_tweet_ids: list[str] = Field(description="Tous les postID analysés")
 
@@ -35,7 +43,7 @@ class NarrativeResult(BaseModel):
 # ── Taxonomie et few-shot ─────────────────────────────────────────────────────
 
 NARRATIFS_VALIDES = ["censure", "copinage", "defense_ultia", "defense_cnc", "autre"]
-ACTEURS_VALIDES   = ["media", "militant", "influenceur", "anonyme", "institution"]
+ACTEURS_VALIDES = ["media", "militant", "influenceur", "anonyme", "institution"]
 
 FEW_SHOT_EXAMPLES = """Exemples de calibration :
 - "Ils censurent encore une fois la vérité, c'est inadmissible" → narratif=censure, acteur_type=militant
@@ -44,10 +52,13 @@ FEW_SHOT_EXAMPLES = """Exemples de calibration :
 - "Ultia n'a rien fait de mal, on s'acharne sur eux sans preuve" → narratif=defense_ultia, acteur_type=influenceur
 - "Je n'ai pas d'avis tranché, attendons d'en savoir plus" → narratif=autre, acteur_type=anonyme"""
 
-BATCH_SIZE = 25  # avec with_structured_output, pas de schema dans le prompt — on peut monter
+BATCH_SIZE = (
+    25  # avec with_structured_output, pas de schema dans le prompt — on peut monter
+)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _format_tweets(batch: pd.DataFrame) -> str:
     lines = []
@@ -69,19 +80,22 @@ def _classify_batch(
     if batch.empty:
         return []
 
-    result: BatchResult = chain.invoke({
-        "evenement": evenement,
-        "periode": periode,
-        "narratifs": ", ".join(NARRATIFS_VALIDES),
-        "acteurs": ", ".join(ACTEURS_VALIDES),
-        "few_shot": FEW_SHOT_EXAMPLES,
-        "tweets": _format_tweets(batch),
-    })
+    result: BatchResult = chain.invoke(
+        {
+            "evenement": evenement,
+            "periode": periode,
+            "narratifs": ", ".join(NARRATIFS_VALIDES),
+            "acteurs": ", ".join(ACTEURS_VALIDES),
+            "few_shot": FEW_SHOT_EXAMPLES,
+            "tweets": _format_tweets(batch),
+        }
+    )
 
     return result.analyses
 
 
 # ── Nœud principal ────────────────────────────────────────────────────────────
+
 
 def run_analyste(state: CrisisState) -> CrisisState:
     """
@@ -93,39 +107,49 @@ def run_analyste(state: CrisisState) -> CrisisState:
     df: pd.DataFrame = state["tweets_sample"]
     config: dict = state.get("corpus_config", {})
 
-    cols = ["postID", "message_normalizer", "Full Text", "Author",
-            "X Verified", "X Followers", "Engagement Type"]
+    cols = [
+        "postID",
+        "message_normalizer",
+        "Full Text",
+        "Author",
+        "X Verified",
+        "X Followers",
+        "Engagement Type",
+    ]
     sample = df[[c for c in cols if c in df.columns]].copy()
 
     evenement = config.get("evenement", "crise virale")
-    periode   = config.get("periode", "")
+    periode = config.get("periode", "")
 
     # LLM et chain instanciés une seule fois, partagés entre tous les batches
     llm = get_llm()
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", get_system_prompt("analyste")),
-        ("human", (
-            "Contexte événement : {evenement} — Période : {periode}\n\n"
-            "Catégories de narratif (utilise EXACTEMENT ces libellés) : {narratifs}\n"
-            "Catégories de type d'acteur : {acteurs}\n\n"
-            "{few_shot}\n\n"
-            "Tweets à classifier (format: [postID] TYPE|v:VERIFIED|texte) :\n{tweets}\n\n"
-            "Retourne un TweetAnalysis par tweet (n'en invente pas d'autres). "
-            "tweet_id = postID exact entre crochets. "
-            "source_tweet_ids doit contenir au minimum le tweet_id lui-même."
-        )),
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", get_system_prompt("analyste")),
+            (
+                "human",
+                (
+                    "Contexte événement : {evenement} — Période : {periode}\n\n"
+                    "Catégories de narratif (utilise EXACTEMENT ces libellés) : {narratifs}\n"
+                    "Catégories de type d'acteur : {acteurs}\n\n"
+                    "{few_shot}\n\n"
+                    "Tweets à classifier (format: [postID] TYPE|v:VERIFIED|texte) :\n{tweets}\n\n"
+                    "Retourne un TweetAnalysis par tweet (n'en invente pas d'autres). "
+                    "tweet_id = postID exact entre crochets. "
+                    "source_tweet_ids doit contenir au minimum le tweet_id lui-même."
+                ),
+            ),
+        ]
+    )
     chain = prompt | llm.with_structured_output(BatchResult)
 
     all_analyses: list[TweetAnalysis] = []
     errors: list[str] = list(state.get("errors", []))
 
     for start in range(0, len(sample), BATCH_SIZE):
-        batch = sample.iloc[start:start + BATCH_SIZE]
+        batch = sample.iloc[start : start + BATCH_SIZE]
         try:
-            all_analyses.extend(
-                _classify_batch(batch, evenement, periode, chain)
-            )
+            all_analyses.extend(_classify_batch(batch, evenement, periode, chain))
         except Exception as exc:
             errors.append(f"[analyste] batch {start}-{start + len(batch)} : {exc}")
 
@@ -143,8 +167,10 @@ def run_analyste(state: CrisisState) -> CrisisState:
             a.source_tweet_ids = [a.tweet_id]
 
     # Agrégations calculées en Python — jamais laissées au LLM
-    repartition       = dict(Counter(a.narratif for a in all_analyses))
-    narratif_dominant = max(repartition, key=repartition.get) if repartition else "autre"
+    repartition = dict(Counter(a.narratif for a in all_analyses))
+    narratif_dominant = (
+        max(repartition, key=repartition.get) if repartition else "autre"
+    )
 
     state["narratives"] = NarrativeResult(
         analyses=all_analyses,
