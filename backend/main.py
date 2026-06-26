@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.schemas.requests import StrategeRequest, VeilleRequest
-from src.schemas.responses import VeilleResponse, StrategeResponse
+from src.schemas.requests import StrategeRequest, VeilleRequest, RedacteurRequest
+from src.schemas.responses import VeilleResponse, StrategeResponse, RedacteurResponse
 
 from src.tools.corpus_loader import load_corpus
 
@@ -15,6 +15,7 @@ from src.pipeline.state import CrisisState
 
 from src.agents.veille import run_veille
 from src.agents.stratege import run_stratege
+from src.agents.redacteur import run_redacteur
 
 load_dotenv()
 
@@ -121,4 +122,36 @@ def analyse_stratege(body: StrategeRequest):
         options=options["options"],
         option_recommandee=options["option_recommandee"],
         justification=options["justification"],
+    )
+
+
+@app.post("/analyse/redacteur", response_model=RedacteurResponse)
+def analyse_redacteur(body: RedacteurRequest):
+    try:
+        state = get_state(body.run_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"run_id inconnu : {body.run_id}")
+
+    if state.get("strategy_options") is None:
+        raise HTTPException(
+            status_code=400, detail="AgentStratège non exécuté sur ce run_id."
+        )
+
+    try:
+        state = run_redacteur(state)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    save_state(body.run_id, dict(state))
+
+    drafts = state["draft_response"]
+    if drafts is None:
+        raise HTTPException(
+            status_code=500, detail="AgentRedacteur n'a produit aucun draft."
+        )
+
+    return RedacteurResponse(
+        run_id=body.run_id,
+        versions=drafts["versions"],
+        recommandation=drafts["recommandation"],
     )
