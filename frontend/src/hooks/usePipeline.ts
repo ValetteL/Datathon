@@ -10,7 +10,7 @@ import {
 } from '../api/client'
 import type {
   RedacteurResultData,
-  SessionStatus,
+  SessionDetail,
   SessionSummary,
   StrategeResultData,
   VeilleResultData,
@@ -22,7 +22,7 @@ export interface PipelineError {
 }
 
 export interface PipelineState {
-  status: SessionStatus
+  status: string
   runId: string | null
   veille: VeilleResultData | null
   stratege: StrategeResultData | null
@@ -32,11 +32,7 @@ export interface PipelineState {
   sessionsLoading: boolean
 }
 
-const LOADING_STATUSES: SessionStatus[] = [
-  'loading_veille',
-  'loading_stratege',
-  'loading_redacteur',
-]
+const LOADING_STATUSES = ['loading_veille', 'loading_stratege', 'loading_redacteur']
 
 const initialState: PipelineState = {
   status: 'idle',
@@ -49,10 +45,36 @@ const initialState: PipelineState = {
   sessionsLoading: false,
 }
 
-function deriveStatusFromDetail(detail: {
-  status: SessionStatus
-}): SessionStatus {
-  return detail.status
+function veilleFromDetail(detail: SessionDetail): VeilleResultData | null {
+  if (!detail.alerts) return null
+  return {
+    run_id: detail.run_id,
+    is_alert: detail.alerts['is_alert'] as boolean,
+    alert_level: detail.alerts['alert_level'] as VeilleResultData['alert_level'],
+    peaks: (detail.alerts['peaks'] ?? []) as VeilleResultData['peaks'],
+    summary: detail.alerts['summary'] as string,
+    threshold_breaches: (detail.alerts['threshold_breaches'] ?? {}) as Record<string, unknown>,
+    is_mock: detail.is_mock,
+  }
+}
+
+function strategeFromDetail(detail: SessionDetail): StrategeResultData | null {
+  if (!detail.strategy_options) return null
+  return {
+    run_id: detail.run_id,
+    options: (detail.strategy_options['options'] ?? []) as StrategeResultData['options'],
+    option_recommandee: detail.strategy_options['option_recommandee'] as string,
+    justification: detail.strategy_options['justification'] as string,
+  }
+}
+
+function redacteurFromDetail(detail: SessionDetail): RedacteurResultData | null {
+  if (!detail.draft_response) return null
+  return {
+    run_id: detail.run_id,
+    versions: (detail.draft_response['versions'] ?? []) as RedacteurResultData['versions'],
+    recommandation: detail.draft_response['recommandation'] as string,
+  }
 }
 
 export function usePipeline() {
@@ -144,10 +166,10 @@ export function usePipeline() {
       setState((s) => ({
         ...s,
         runId: detail.run_id,
-        veille: detail.veille,
-        stratege: detail.stratege,
-        redacteur: detail.redacteur,
-        status: deriveStatusFromDetail(detail),
+        status: detail.status,
+        veille: veilleFromDetail(detail),
+        stratege: strategeFromDetail(detail),
+        redacteur: redacteurFromDetail(detail),
       }))
     } catch (error) {
       setState((s) => ({ ...s, error: toPipelineError(error, 'sessions') }))

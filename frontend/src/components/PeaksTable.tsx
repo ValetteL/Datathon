@@ -5,7 +5,7 @@ interface PeaksTableProps {
 }
 
 export default function PeaksTable({ peaks }: PeaksTableProps) {
-  const sorted = [...peaks].sort((a, b) => b.volume - a.volume)
+  const sorted = [...peaks].sort((a, b) => b.tweet_count - a.tweet_count)
 
   if (sorted.length === 0) {
     return <p className="text-sm text-[var(--text)]">Aucun pic détecté.</p>
@@ -24,8 +24,8 @@ export default function PeaksTable({ peaks }: PeaksTableProps) {
         {sorted.map((peak) => (
           <tr key={peak.date} className="border-t border-[var(--border)]">
             <td className="px-3 py-2">{peak.date}</td>
-            <td className="px-3 py-2 font-medium">{peak.volume.toLocaleString('fr-FR')}</td>
-            <td className="px-3 py-2">{peak.top_shares.join(', ')}</td>
+            <td className="px-3 py-2 font-medium">{peak.tweet_count.toLocaleString('fr-FR')}</td>
+            <td className="px-3 py-2">{peak.top_shares.toLocaleString('fr-FR')}</td>
           </tr>
         ))}
       </tbody>

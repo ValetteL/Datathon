@@ -27,13 +27,16 @@ export class PipelineApiError extends Error {
 
 function toMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const err = error as AxiosError<{ detail?: string; message?: string }>
-    return (
-      err.response?.data?.detail ??
-      err.response?.data?.message ??
-      err.message ??
-      "Erreur réseau inconnue"
-    )
+    const err = error as AxiosError<{ detail?: unknown; message?: string }>
+    const detail = err.response?.data?.detail
+    if (Array.isArray(detail)) {
+      // Format d'erreur de validation FastAPI : [{loc, msg, type}]
+      return detail
+        .map((d) => (typeof d === 'object' && d !== null && 'msg' in d ? String((d as { msg: unknown }).msg) : String(d)))
+        .join(' — ')
+    }
+    if (typeof detail === 'string') return detail
+    return err.response?.data?.message ?? err.message ?? 'Erreur réseau inconnue'
   }
   if (error instanceof Error) return error.message
   return 'Erreur inconnue'
@@ -47,7 +50,7 @@ apiClient.interceptors.response.use(
 
 export async function lancerVeille(): Promise<VeilleResultData> {
   try {
-    const { data } = await apiClient.post<VeilleResultData>('/analyse/veille')
+    const { data } = await apiClient.post<VeilleResultData>('/analyse/veille', {})
     return data
   } catch (error) {
     throw new PipelineApiError('veille', toMessage(error))
@@ -61,7 +64,7 @@ export async function lancerStratege(
   try {
     const { data } = await apiClient.post<StrategeResultData>('/analyse/stratege', {
       run_id: runId,
-      human_approved: humanApproved,
+      humain_approved: humanApproved,
     })
     return data
   } catch (error) {

@@ -5,18 +5,17 @@ interface RedacteurResultProps {
   data: RedacteurResultData
 }
 
-// US-06 : drafts de communiqué rédigés par l'AgentRédacteur
 export default function RedacteurResult({ data }: RedacteurResultProps) {
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-[var(--border)] p-5 text-left">
       <h2 className="text-xl font-semibold text-[var(--text-h)]">Versions du communiqué</h2>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {data.drafts.map((draft) => (
+        {data.versions.map((draft) => (
           <DraftCard
-            key={draft.id}
+            key={draft.tonalite}
             draft={draft}
-            recommandee={draft.id === data.version_recommandee}
+            recommandee={draft.tonalite === data.recommandation}
           />
         ))}
       </div>
@@ -28,7 +27,7 @@ function DraftCard({
   draft,
   recommandee,
 }: {
-  draft: RedacteurResultData['drafts'][number]
+  draft: RedacteurResultData['versions'][number]
   recommandee: boolean
 }) {
   const [copied, setCopied] = useState(false)

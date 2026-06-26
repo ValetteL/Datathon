@@ -18,10 +18,10 @@ export default function StrategeResult({ data }: StrategeResultProps) {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {data.options.map((option) => {
-          const recommandee = option.id === data.option_recommandee
+          const recommandee = option.option_id === data.option_recommandee
           return (
             <div
-              key={option.id}
+              key={option.option_id}
               className={`relative flex flex-col gap-2 rounded-lg border p-4 ${TONALITE_CLASSES[option.tonalite]}`}
             >
               {recommandee && (

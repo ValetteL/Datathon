@@ -25,27 +25,41 @@ export default function Pipeline() {
     retry,
     chargerSessions,
     ouvrirSession,
+    reset,
   } = usePipeline()
 
-  // US-09 : charger les sessions précédentes au montage
   useEffect(() => {
     void chargerSessions()
   }, [chargerSessions])
 
   const pipelineStarted = status !== 'idle'
+  const isTerminal = status === 'complete' || status === 'rejected'
 
   return (
-    <div className="flex flex-col gap-6 pb-16">
+    <div className="flex min-h-svh flex-col">
       {pipelineStarted && <StepIndicator status={status} />}
 
-      <header className="px-6 pt-8 text-center">
-        <h1 className="text-3xl font-semibold text-[var(--text-h)]">
-          Pipeline d'analyse de crise virale
-        </h1>
-        <p className="mt-2 text-[var(--text)]">CNC × Ultia — démonstration multi-agents</p>
+      <header className="border-b border-[var(--border)] bg-[var(--bg)] px-6 py-5">
+        <div className="mx-auto flex max-w-3xl items-center justify-between">
+          <div className="text-left">
+            <h1 className="text-xl font-semibold text-[var(--text-h)]">
+              Pipeline d'analyse de crise
+            </h1>
+            <p className="text-sm text-[var(--text)]">CNC × Ultia — démonstration multi-agents</p>
+          </div>
+          {isTerminal && (
+            <button
+              type="button"
+              onClick={reset}
+              className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-4 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--code-bg)]"
+            >
+              ← Nouvelle analyse
+            </button>
+          )}
+        </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-5 px-4 py-8">
         {error && <ErrorBanner error={error} onRetry={retry} />}
 
         {!pipelineStarted && (
@@ -55,14 +69,14 @@ export default function Pipeline() {
                 type="button"
                 onClick={lancerAnalyse}
                 disabled={isLoading}
-                className="rounded-lg bg-[var(--accent)] px-6 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 hover:opacity-90"
+                className="rounded-lg bg-[var(--accent)] px-8 py-3 font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 hover:opacity-90"
               >
                 Lancer l'analyse
               </button>
             </div>
 
             <section className="flex flex-col gap-3 text-left">
-              <h2 className="text-lg font-semibold text-[var(--text-h)]">Sessions précédentes</h2>
+              <h2 className="text-base font-semibold text-[var(--text-h)]">Sessions précédentes</h2>
               <SessionsList
                 sessions={sessions}
                 loading={sessionsLoading}
@@ -72,7 +86,7 @@ export default function Pipeline() {
           </>
         )}
 
-        {status === 'loading_veille' && <Loader label="Analyse de la Veille en cours…" />}
+        {status === 'loading_veille' && <Loader label="Analyse de la veille en cours…" />}
 
         {veille && (status === 'awaiting_human' || status === 'loading_stratege') && (
           <VeilleResult data={veille} />
@@ -94,8 +108,11 @@ export default function Pipeline() {
         {redacteur && status === 'complete' && <RedacteurResult data={redacteur} />}
 
         {status === 'rejected' && (
-          <div className="rounded-xl border border-[var(--border)] p-5 text-center text-[var(--text)]">
-            Analyse rejetée. Le pipeline s'est arrêté avant la génération de réponses.
+          <div className="rounded-xl border border-[var(--border)] p-6 text-center">
+            <p className="font-medium text-[var(--text-h)]">Analyse arrêtée</p>
+            <p className="mt-1 text-sm text-[var(--text)]">
+              Le pipeline s'est arrêté avant la génération de réponses.
+            </p>
           </div>
         )}
       </main>
