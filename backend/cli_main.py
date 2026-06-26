@@ -7,12 +7,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from agents.analyste import run_analyste
-from agents.redacteur import run_redacteur
-from agents.stratege import run_stratege
-from agents.veille import run_veille
-from pipeline.state import CrisisState
-from tools.corpus_loader import load_corpus
 
 console = Console()
 load_dotenv()
@@ -70,6 +64,8 @@ if state.get("errors"):
     console.print(
         f"[yellow]⚠ {len(state['errors'])} erreur(s) de batch — pipeline continue[/yellow]"
     )
+    for err in state["errors"]:
+        console.print(f"  [dim red]{err}[/dim red]")
 
 # ── Agent Veille ──────────────────────────────────────────────────────────────
 console.rule("[bold cyan]Agent Veille[/bold cyan]")
