@@ -141,16 +141,25 @@ Ces fichiers permettent d'inspecter ou déboguer une exécution passée sans rel
 
 ## 4. Adapter à une nouvelle crise
 
-Un seul paramètre à changer dans `backend/src/main.py` (ligne ~25) :
+Modifier `backend/src/utils/config.py` :
 
 ```python
-corpus_config={
-    "evenement": "Affaire Ultia x CNC",   # ← nom de la crise
-    "periode": "mars-avril 2026",          # ← période couverte
-},
+corpus_config = {
+    "evenement": "Nom de la crise",        # ← injecté dans tous les prompts
+    "periode": "mois-mois AAAA",           # ← période couverte
+    "narratifs": ["narratif_a", "narratif_b", "autre"],   # ← taxonomie narrative
+    "acteurs":   ["media", "militant", "influenceur",     # ← types d'acteurs
+                  "anonyme", "institution", "coordonne_bot"],
+    "few_shot":  "Exemples de calibration :\n- ...",      # ← optionnel
+    "sample_size": 300,                    # ← nb tweets analysés (défaut : 300)
+}
 ```
 
-Ce paramètre reconfigure les prompts de **tous les agents** automatiquement.
+Ce paramètre reconfigure les prompts et la taxonomie de **tous les agents** automatiquement. Si `narratifs`, `acteurs` ou `few_shot` sont absents, l'agent Analyste utilise des valeurs génériques.
+
+### Stratification de l'échantillon Analyste
+
+L'agent Analyste tire un échantillon **stratifié par type d'engagement** (ORIGINAL / REPLY / QUOTE / RETWEET) avec allocation égale par type, quel que soit le corpus. Cela surreprésente les tweets originaux et les réponses (plus riches en contenu narratif) par rapport à leur proportion réelle dans le corpus brut.
 
 ### Changer le corpus
 
@@ -176,7 +185,7 @@ Seuils calculés automatiquement :
 - **Volume** : `mean + 2σ` sur la distribution journalière (granularité `daily` / `weekly` / `monthly` selon la durée du corpus)
 - **Viraux** : percentile p90 sur Likes non-nuls, p75 sur Shares non-nuls
 - **Coordination** : synchronicité p95, seuil rapid-fire 1% des auteurs, copy-paste inter-comptes
-- **Acteurs** : seuil d'influencer burst (p90 influenceurs distincts/30min), cascade sentiment vérifiés (mean+1.5σ)
+- **Acteurs** : seuil d'influencer burst (p90 influenceurs distincts/jour), cascade sentiment vérifiés (mean+1.5σ)
 
 Pour inspecter ou forcer un recalcul :
 

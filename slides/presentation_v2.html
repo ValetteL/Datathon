@@ -413,11 +413,11 @@
       <div class="agent-card">
         <div class="agent-card-label">📥 Input</div>
         <ul>
-          <li><code>tweets_sample</code> — 500 tweets tirés aléatoirement</li>
-          <li><code>corpus_config</code> — événement, période, mots-clés</li>
+          <li><code>raw_df</code> — corpus complet (35 396 tweets)</li>
+          <li><code>corpus_config</code> — événement, période, <strong>taxonomies injectées</strong></li>
         </ul>
         <div style="margin-top:9px;font-size:11.5px;color:#64748b;padding:7px 10px;background:#0a0f1e;border-radius:6px;line-height:1.5;">
-          <strong style="color:#94a3b8;">Pourquoi 500 tweets ?</strong> Tirage aléatoire reproductible (<code>random_state=42</code>) sur tout le corpus — ni les premiers, ni un ordre chronologique. Représentatif à l'échelle du corpus.
+          <strong style="color:#94a3b8;">Échantillon stratifié</strong> — allocation égale par type d'engagement (ORIGINAL / REPLY / QUOTE / RETWEET), quel que soit le corpus. Surreprésente les tweets originaux, plus riches en signal narratif.
         </div>
       </div>
       <div class="agent-card">
@@ -427,24 +427,24 @@
           <li>Narratif dominant + répartition <em>(calculés en Python, pas par le LLM)</em></li>
           <li>1 analyse par tweet : narratif × type d'acteur</li>
         </ul>
-        <div style="margin-top:9px;font-size:11px;color:#475569;font-style:italic;">
-          🔄 Classification en cours de généralisation — les catégories seront adaptables à tout corpus.
+        <div style="margin-top:9px;font-size:11px;color:#4ade80;font-style:italic;">
+          ✓ Taxonomie entièrement configurable via <code>corpus_config</code> — aucun narratif hardcodé.
         </div>
       </div>
       <div class="agent-card">
         <div class="agent-card-label">🤖 Réglages LLM</div>
         <div><strong style="color:#e2e8f0;">Réponses structurées</strong> — le LLM retourne directement un JSON typé, pas du texte libre. Impossible de sortir du format.</div>
         <div style="margin-top:8px;font-size:11.5px;color:#64748b;line-height:1.5;">
-          <strong style="color:#94a3b8;">Température 0.2</strong> (sur 1.0) = réglé pour être déterministe et factuel. Une classification doit être stable et reproductible, pas créative.
+          <strong style="color:#94a3b8;">Température 0.2</strong> = déterministe et factuel. Format tweet enrichi : <code>[postID] TYPE|v:VERIFIED|f:FOLLOWERS|texte</code>
         </div>
-        <div style="margin-top:7px;"><span class="chip">batchs de 25</span> <span class="chip">few-shot intégré</span></div>
+        <div style="margin-top:7px;"><span class="chip">batchs de 25</span> <span class="chip">few-shot configurable</span></div>
       </div>
       <div class="agent-card" style="border-color:#3b82f6;">
         <div class="agent-card-label" style="color:#60a5fa;">🎯 Mission</div>
         <div>Classifier chaque tweet par <strong style="color:#e2e8f0;">narratif</strong>
-          (censure · copinage · défense_ultia · défense_cnc · autre)
-          et <strong style="color:#e2e8f0;">type d'acteur</strong>
-          (média · militant · influenceur · anonyme · institution).</div>
+          et <strong style="color:#e2e8f0;">type d'acteur</strong> — catégories injectées via <code>corpus_config</code>, adaptables à toute crise.
+          <span style="color:#64748b;font-size:11px;display:block;margin-top:5px;">Ex. Ultia : censure · copinage · défense_ultia · défense_cnc · autre — acteurs : média · militant · influenceur · anonyme · institution · <strong style="color:#f59e0b;">coordonne_bot</strong></span>
+        </div>
         <div style="margin-top:8px;padding:7px 11px;background:#0a1628;border-radius:6px;font-size:11.5px;color:#60a5fa;">
           Répond à : <em>"Quels narratifs dominent la conversation, et qui les porte ?"</em>
         </div>
@@ -617,24 +617,24 @@
       <div>
         <div class="limit-col-title" style="color:#4ade80;">✦ Optimisations possibles</div>
         <div class="limit-item">
-          <div class="limit-icon">🎯</div>
-          <div><strong>Stratifier l'échantillon</strong> par type d'acteur — garantir la représentation des comptes vérifiés et influenceurs dans les 500 tweets analysés</div>
-        </div>
-        <div class="limit-item">
-          <div class="limit-icon">🤖</div>
-          <div>Ajouter une catégorie <strong>compte coordonné / bot</strong> dans la classification — les 947 comptes rapid-fire méritent leur propre classe</div>
-        </div>
-        <div class="limit-item">
-          <div class="limit-icon">📈</div>
-          <div>Passer le <strong>nombre de followers</strong> au LLM Analyste — un compte à 500k followers "militant" n'a pas le même poids qu'un anonyme</div>
-        </div>
-        <div class="limit-item">
           <div class="limit-icon">🔔</div>
           <div><strong>HumanGate asynchrone</strong> — notification Slack/email dès l'alerte, pipeline reprend à la validation sans bloquer</div>
         </div>
         <div class="limit-item">
+          <div class="limit-icon">📊</div>
+          <div><strong>Passage au corpus complet</strong> — actuellement limité par quota API LLM ; batch processing asynchrone sur 35 396 tweets</div>
+        </div>
+        <div class="limit-item">
+          <div class="limit-icon">🧠</div>
+          <div><strong>Modèle spécialisé par agent</strong> — un modèle de classification léger pour l'Analyste, un modèle génératif pour le Rédacteur</div>
+        </div>
+        <div class="limit-item">
+          <div class="limit-icon">🌍</div>
+          <div><strong>Support multilingue</strong> — le pipeline est langue-agnostique, les prompts et taxonomies suffisent à couvrir une crise internationale</div>
+        </div>
+        <div class="limit-item">
           <div class="limit-icon">🔄</div>
-          <div>Architecture <strong>générique déjà opérationnelle</strong> — un seul paramètre change pour une nouvelle crise (scandale marque, polémique politique, désinformation…)</div>
+          <div>Architecture <strong>générique opérationnelle</strong> — un seul <code>corpus_config</code> reconfigure l'ensemble pour toute nouvelle crise</div>
         </div>
       </div>
     </div>
