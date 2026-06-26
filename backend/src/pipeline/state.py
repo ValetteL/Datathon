@@ -9,19 +9,19 @@ class CrisisState(TypedDict):
     tweets_sample: pd.DataFrame
     corpus_config: dict  # {"evenement": str, "periode": str, "mots_cles": list[str]}
 
-    # Output AgentAnalyste
-    narratives: Optional[dict]   # NarrativeResult.model_dump()
+    # Output AgentAnalyste → pipeline.schemas.NarrativeResult.model_dump()
+    narratives: Optional[dict]
 
-    # Output AgentVeille
-    alerts: Optional[dict]       # AlertSignal.model_dump()
+    # Output AgentVeille → agents.veille.AlertSignal.model_dump()
+    alerts: Optional[dict]
 
-    # Validation humaine
+    # Validation humaine (HumanGate — AD-7)
     human_approved: bool
 
-    # Output AgentStratège
+    # Output AgentStratège → pipeline.schemas.StrategyOptions.model_dump()
     strategy_options: Optional[dict]
 
-    # Output AgentRédacteur
+    # Output AgentRédacteur → pipeline.schemas.DraftResponse.model_dump()
     draft_response: Optional[dict]
 
     # Métadonnées
