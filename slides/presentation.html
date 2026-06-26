@@ -592,41 +592,48 @@
   <div class="slide" id="s_veille">
     <div class="eyebrow">Agent Veille — J3</div>
     <h2>Détection <span class="accent">scalable</span> de crise</h2>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:28px;width:100%;max-width:1000px;">
-      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:22px;">
-        <div style="font-size:16px;font-weight:700;color:#3b82f6;margin-bottom:10px;">📊 Seuils auto-calibrés</div>
-        <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:22px;width:100%;max-width:1100px;">
+      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:18px;">
+        <div style="font-size:15px;font-weight:700;color:#3b82f6;margin-bottom:10px;">📊 Seuils auto-calibrés</div>
+        <div style="font-size:12px;color:#94a3b8;line-height:1.8;">
           <span style="color:#f1f5f9;">Volume</span> : mean + 2σ — adapté au corpus<br>
           <span style="color:#f1f5f9;">Viraux</span> : percentile p90/p75 sur non-nuls<br>
           <span style="color:#f1f5f9;">Granularité</span> : daily / weekly / monthly auto<br>
           <span style="color:#f1f5f9;">Cache</span> : hash dataset → pas de recalcul inutile
         </div>
       </div>
-      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:22px;">
-        <div style="font-size:16px;font-weight:700;color:#f59e0b;margin-bottom:10px;">🔗 Signaux de coordination</div>
-        <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
+      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:18px;">
+        <div style="font-size:15px;font-weight:700;color:#f59e0b;margin-bottom:10px;">🔗 Signaux de coordination</div>
+        <div style="font-size:12px;color:#94a3b8;line-height:1.8;">
           <span style="color:#f1f5f9;">Synchronicité</span> : rafales multi-comptes (p95)<br>
           <span style="color:#f1f5f9;">Rapid-fire</span> : posts enchaînés en &lt; 60s<br>
           <span style="color:#f1f5f9;">Copy-paste</span> : messages identiques inter-comptes<br>
           <span style="color:#ef4444;">Volume + Coordination → CRITICAL</span>
         </div>
       </div>
-      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:22px;">
-        <div style="font-size:16px;font-weight:700;color:#10b981;margin-bottom:10px;">⚡ Niveaux d'alerte</div>
-        <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
-          <span style="color:#ef4444;font-weight:700;">CRITICAL</span> : volume + coordination<br>
+      <div style="background:#0f1f38;border:1px solid #7c3aed;border-radius:12px;padding:18px;">
+        <div style="font-size:15px;font-weight:700;color:#a78bfa;margin-bottom:10px;">👤 Signaux acteurs</div>
+        <div style="font-size:12px;color:#94a3b8;line-height:1.8;">
+          <span style="color:#f1f5f9;">Influencer burst</span> : ≥ N influenceurs distincts / jour<br>
+          <span style="color:#f1f5f9;">Cascade vérifiés</span> : ratio négatif ≥ mean+1.5σ<br>
+          Seuils calibrés sur le profil acteur du corpus<br>
+          <span style="color:#ef4444;">Volume + Burst → CRITICAL</span>
+        </div>
+      </div>
+      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:18px;">
+        <div style="font-size:15px;font-weight:700;color:#10b981;margin-bottom:10px;">⚡ Niveaux d'alerte</div>
+        <div style="font-size:12px;color:#94a3b8;line-height:1.8;">
+          <span style="color:#ef4444;font-weight:700;">CRITICAL</span> : volume + coordination <em>ou</em> burst<br>
           <span style="color:#f59e0b;font-weight:700;">HIGH</span>&nbsp;&nbsp;&nbsp;&nbsp; : pic de volume<br>
-          <span style="color:#3b82f6;font-weight:700;">MEDIUM</span>&nbsp;&nbsp; : viral ou coordination seule<br>
+          <span style="color:#3b82f6;font-weight:700;">MEDIUM</span>&nbsp;&nbsp; : viral, coordination ou cascade<br>
           <span style="color:#94a3b8;font-weight:700;">LOW</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : pas de signal anormal
         </div>
       </div>
-      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:22px;">
-        <div style="font-size:16px;font-weight:700;color:#8b5cf6;margin-bottom:10px;">📌 RT ratio — recadrage</div>
-        <div style="font-size:13px;color:#94a3b8;line-height:1.8;">
-          RT &gt; 90% sans pic ≠ précurseur<br>
-          → <span style="color:#f1f5f9;">signal de persistance</span> : crise qui dure<br>
-          Les pics précèdent les hauts RT — pas l'inverse.<br>
-          Utile pour détecter le "feu sous la cendre".
+      <div style="background:#0f1f38;border:1px solid #1e3a5f;border-radius:12px;padding:18px;grid-column:span 2;">
+        <div style="font-size:15px;font-weight:700;color:#8b5cf6;margin-bottom:10px;">📌 RT ratio — recadrage · Acteurs dominants (données corpus)</div>
+        <div style="font-size:12px;color:#94a3b8;line-height:1.8;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>RT &gt; 90% sans pic ≠ précurseur → <span style="color:#f1f5f9;">signal de persistance</span> : crise qui dure<br>Les pics précèdent les hauts RT — pas l'inverse.</div>
+          <div><span style="color:#f1f5f9;">Standard</span> : 61 % des tweets — amplification de masse<br><span style="color:#f1f5f9;">Vérifiés</span> : 9,1 % — engagement ×127 par tweet<br><span style="color:#a78bfa;">Influenceurs</span> : 2,2 % — engagement ×51, 48 % rapid-fire</div>
         </div>
       </div>
     </div>

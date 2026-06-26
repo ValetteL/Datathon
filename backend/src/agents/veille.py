@@ -74,7 +74,7 @@ def _compute_coordination_signals(df: pd.DataFrame, thresholds: dict) -> dict:
     cp_clusters = 0
     if len(cp):
         cross = cp.groupby(text_col)["X Author ID"].nunique()
-        cp_clusters = int((cross >= 2).sum())
+        cp_clusters = (cross >= 2).sum()
 
     return {
         "sync_burst_windows":     len(sync_bursts),
@@ -86,6 +86,41 @@ def _compute_coordination_signals(df: pd.DataFrame, thresholds: dict) -> dict:
             or rapid_accounts > rf_threshold
             or cp_clusters >= thresholds["COPY_PASTE_CLUSTERS_THRESHOLD"]
         ),
+    }
+
+
+def _compute_actor_signals(df: pd.DataFrame, thresholds: dict) -> dict:
+    """Signaux d'alerte basés sur le profil des acteurs (influenceurs et comptes vérifiés)."""
+    df = df.copy()
+    verified_mask   = df["X Verified"].fillna(False).astype(bool)
+    influencer_mask = ~verified_mask & (df["X Followers"].fillna(0) >= 10_000)
+
+    # Signal 1 — Influencer burst (journalier)
+    inf_df              = df[influencer_mask].dropna(subset=["Date"])
+    inf_burst_days      = 0
+    inf_burst_max_count = 0
+    if len(inf_df) > 0:
+        daily_inf  = inf_df.groupby(pd.to_datetime(inf_df["Date"]).dt.date)["X Author ID"].nunique()
+        active     = daily_inf[daily_inf >= thresholds["INFLUENCER_BURST_N"]]
+        inf_burst_days      = len(active)
+        inf_burst_max_count = active.max() if len(active) else 0
+
+    # Signal 2 — Verified sentiment cascade
+    ver_df             = df[verified_mask].dropna(subset=["Date"])
+    verified_neg_ratio = 0.0
+    verified_neg_alert = False
+    if len(ver_df) > 0:
+        neg_ratio          = (ver_df["Sentiment"] == "negative").mean()
+        verified_neg_ratio = round(neg_ratio, 3)
+        verified_neg_alert = bool(neg_ratio >= thresholds["VERIFIED_NEG_THRESHOLD"])
+
+    return {
+        "influencer_burst_days":      inf_burst_days,
+        "influencer_burst_max_count": inf_burst_max_count,
+        "influencer_burst_alert":     inf_burst_days > 0,
+        "verified_neg_ratio":         verified_neg_ratio,
+        "verified_neg_alert":         verified_neg_alert,
+        "actor_alert":                inf_burst_days > 0 or verified_neg_alert,
     }
 
 
@@ -129,6 +164,9 @@ def run_veille(state: CrisisState) -> CrisisState:
     # ── 4. Signaux de coordination ────────────────────────────────────────────
     coord_signals = _compute_coordination_signals(df, thresholds)
 
+    # ── 4b. Signaux acteurs (influenceurs + vérifiés) ─────────────────────────
+    actor_signals = _compute_actor_signals(df, thresholds)
+
     # ── 5. Sentiment par jour (évolution du ton) ──────────────────────────────
     sentiment_daily = (
         df.groupby(["_day", "Sentiment"])
@@ -137,17 +175,19 @@ def run_veille(state: CrisisState) -> CrisisState:
     )
 
     # ── 6. Détermination du niveau d'alerte ───────────────────────────────────
-    vol_alert   = len(peak_days) > 0
-    viral_alert = len(viral_tweets) > 0
-    coord_alert = coord_signals["coordination_alert"]
+    vol_alert          = len(peak_days) > 0
+    viral_alert        = len(viral_tweets) > 0
+    coord_alert        = coord_signals["coordination_alert"]
+    inf_burst_alert    = actor_signals["influencer_burst_alert"]
+    verified_neg_alert = actor_signals["verified_neg_alert"]
 
-    is_alert = vol_alert or viral_alert or coord_alert
+    is_alert = vol_alert or viral_alert or coord_alert or inf_burst_alert or verified_neg_alert
 
-    if vol_alert and coord_alert:
+    if vol_alert and (coord_alert or inf_burst_alert):
         forced_level = "critical"
-    elif vol_alert or (viral_alert and coord_alert):
+    elif vol_alert or (viral_alert and (coord_alert or inf_burst_alert)):
         forced_level = "high"
-    elif viral_alert or coord_alert:
+    elif viral_alert or coord_alert or inf_burst_alert or verified_neg_alert:
         forced_level = "medium"
     else:
         forced_level = "low"
@@ -194,6 +234,21 @@ def run_veille(state: CrisisState) -> CrisisState:
         else ""
     )
 
+    actor_summary = ""
+    if inf_burst_alert:
+        actor_summary += (
+            f"Burst d'influenceurs : {actor_signals['influencer_burst_days']} jour(s) "
+            f"avec ≥ {thresholds['INFLUENCER_BURST_N']} influenceurs distincts "
+            f"(max {actor_signals['influencer_burst_max_count']} auteurs/jour). "
+        )
+    if verified_neg_alert:
+        actor_summary += (
+            f"Cascade sentiment vérifiés : {actor_signals['verified_neg_ratio']:.0%} de tweets négatifs "
+            f"parmi les comptes vérifiés (seuil : {thresholds['VERIFIED_NEG_THRESHOLD']:.0%})."
+        )
+    if not actor_summary:
+        actor_summary = "Pas de signal acteur anormal (influenceurs ou comptes vérifiés)."
+
     # ── 8. LLM : génère uniquement le résumé textuel ─────────────────────────
     llm = get_llm()
 
@@ -206,6 +261,7 @@ def run_veille(state: CrisisState) -> CrisisState:
             "Tweets vraiment viraux (Likes ≥ {likes_t} ou Shares ≥ {shares_t}) : {viral_count} tweets\n"
             "Leurs postIDs : {viral_ids}\n\n"
             "Signaux de coordination :\n{coord_summary}\n\n"
+            "Signaux acteurs (influenceurs / vérifiés) :\n{actor_summary}\n\n"
             "Signal de persistance RT :\n{persistence_summary}\n\n"
             "À partir de ces données, génère un AlertSignal avec :\n"
             "- is_alert={is_alert}\n"
@@ -225,6 +281,7 @@ def run_veille(state: CrisisState) -> CrisisState:
         "viral_count":         len(viral_tweets),
         "viral_ids":           str(viral_ids),
         "coord_summary":       coord_summary,
+        "actor_summary":       actor_summary,
         "persistence_summary": persistence_summary,
         "is_alert":            is_alert,
         "forced_level":        forced_level,
@@ -234,16 +291,21 @@ def run_veille(state: CrisisState) -> CrisisState:
     result.is_alert    = is_alert
     result.alert_level = forced_level
     result.threshold_breaches = {
-        "peak_days_count":        len(peak_days),
-        "viral_tweets_count":     len(viral_tweets),
-        "max_daily_volume":       int(daily_vol.max()),
-        "max_hourly_volume":      int(hourly_vol.max()),
-        "coordination_alert":     coord_alert,
-        "sync_burst_windows":     coord_signals["sync_burst_windows"],
-        "rapid_fire_accounts":    coord_signals["rapid_fire_accounts"],
-        "copy_paste_clusters":    coord_signals["copy_paste_clusters"],
-        "rt_persistence_days":    len(rt_persistence_days),
-        "thresholds_granularity": thresholds["_corpus_stats"]["granularity"],
+        "peak_days_count":              len(peak_days),
+        "viral_tweets_count":           len(viral_tweets),
+        "max_daily_volume":             daily_vol.max(),
+        "max_hourly_volume":            hourly_vol.max(),
+        "coordination_alert":           coord_alert,
+        "sync_burst_windows":           coord_signals["sync_burst_windows"],
+        "rapid_fire_accounts":          coord_signals["rapid_fire_accounts"],
+        "copy_paste_clusters":          coord_signals["copy_paste_clusters"],
+        "influencer_burst_alert":     inf_burst_alert,
+        "influencer_burst_days":      actor_signals["influencer_burst_days"],
+        "influencer_burst_max_count": actor_signals["influencer_burst_max_count"],
+        "verified_neg_alert":           verified_neg_alert,
+        "verified_neg_ratio":           actor_signals["verified_neg_ratio"],
+        "rt_persistence_days":          len(rt_persistence_days),
+        "thresholds_granularity":       thresholds["_corpus_stats"]["granularity"],
     }
 
     state["alerts"] = result.model_dump()

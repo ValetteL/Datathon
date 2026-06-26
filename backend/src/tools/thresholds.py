@@ -22,7 +22,6 @@ import hashlib
 import json
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 _CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "outputs"
@@ -47,17 +46,18 @@ def _choose_granularity(span_days: int) -> str:
 
 def _volume_thresholds(df: pd.DataFrame, granularity: str) -> dict:
     df = df.copy()
-    df["_hour"] = df["Date"].dt.floor("h")
-    df["_day"]  = df["Date"].dt.date
+    dates = pd.to_datetime(df["Date"])
+    df["_hour"] = dates.dt.floor("h")
+    df["_day"]  = dates.dt.date
 
     hourly_vol = df.groupby("_hour").size()
     daily_vol  = df.groupby("_day").size()
 
     if granularity == "weekly":
-        df["_week"] = df["Date"].dt.to_period("W")
+        df["_week"] = dates.dt.to_period("W")
         baseline_vols = df.groupby("_week").size() / 7.0
     elif granularity == "monthly":
-        df["_month"] = df["Date"].dt.to_period("M")
+        df["_month"] = dates.dt.to_period("M")
         baseline_vols = df.groupby("_month").size() / 30.0
     else:
         baseline_vols = daily_vol.astype(float)
@@ -69,11 +69,11 @@ def _volume_thresholds(df: pd.DataFrame, granularity: str) -> dict:
         "VOLUME_ALERT_PER_DAY":  int(vol_mean + 2 * vol_std),
         "VOLUME_ALERT_PER_HOUR": int(hourly_vol.mean() + 2 * hourly_vol.std()),
         "_vol_stats": {
-            "granularity":    granularity,
-            "daily_mean":     round(float(daily_vol.mean()), 1),
-            "daily_std":      round(float(daily_vol.std()), 1),
-            "baseline_mean":  round(float(vol_mean), 1),
-            "baseline_std":   round(float(vol_std), 1),
+            "granularity":   granularity,
+            "daily_mean":    round(daily_vol.mean(), 1),
+            "daily_std":     round(daily_vol.std(), 1),
+            "baseline_mean": round(vol_mean, 1),
+            "baseline_std":  round(vol_std, 1),
         },
     }
 
@@ -85,23 +85,69 @@ def _viral_thresholds(df: pd.DataFrame) -> dict:
         "VIRAL_LIKES_THRESHOLD":  int(likes_nz.quantile(0.90))  if len(likes_nz)  else 50,
         "VIRAL_SHARES_THRESHOLD": int(shares_nz.quantile(0.75)) if len(shares_nz) else 20,
         "_viral_stats": {
-            "likes_nonzero_pct":  round(float(len(likes_nz)  / len(df)), 3),
-            "shares_nonzero_pct": round(float(len(shares_nz) / len(df)), 3),
+            "likes_nonzero_pct":  round(len(likes_nz)  / len(df), 3),
+            "shares_nonzero_pct": round(len(shares_nz) / len(df), 3),
         },
     }
 
 
 def _rt_thresholds(df: pd.DataFrame) -> dict:
     daily_rt = (
-        df.groupby(df["Date"].dt.date)
-        .apply(lambda x: (x["Engagement Type"] == "RETWEET").mean(), include_groups=False)
+        df.groupby(pd.to_datetime(df["Date"]).dt.date)["Engagement Type"]
+        .apply(lambda x: (x == "RETWEET").mean())
     )
     return {
         "RETWEET_RATIO_ALERT":       0.90,
         "RETWEET_PERSISTENCE_ALERT": 0.90,
         "_rt_stats": {
-            "rt_ratio_mean":   round(float(daily_rt.mean()),   3),
-            "rt_ratio_median": round(float(daily_rt.median()), 3),
+            "rt_ratio_mean":   round(daily_rt.mean(),   3),
+            "rt_ratio_median": round(daily_rt.median(), 3),
+        },
+    }
+
+
+def _actor_thresholds(df: pd.DataFrame) -> dict:
+    """
+    Seuils basés sur le profil des acteurs.
+
+    - Influencer burst   : p90 d'influenceurs distincts par jour (min 2)
+    - Verified sentiment : mean + 1.5σ du ratio négatif journalier des vérifiés, plafonné à 0.70
+    """
+    df = df.copy()
+    verified_mask   = df["X Verified"].fillna(False).astype(bool)
+    influencer_mask = ~verified_mask & (df["X Followers"].fillna(0) >= 10_000)
+
+    # --- Influencer burst (journalier — plus stable que 30min sur corpus peu dense)
+    inf_df = df[influencer_mask].dropna(subset=["Date"])
+    if len(inf_df) > 0:
+        daily_inf   = inf_df.groupby(pd.to_datetime(inf_df["Date"]).dt.date)["X Author ID"].nunique()
+        inf_burst_n = max(2, int(daily_inf.quantile(0.90)))
+    else:
+        inf_burst_n = 2
+
+    # --- Verified sentiment cascade
+    ver_df = df[verified_mask].dropna(subset=["Date"])
+    v_mean = 0.0
+    v_std  = 0.0
+    if len(ver_df) > 0:
+        daily_neg = (
+            ver_df.groupby(pd.to_datetime(ver_df["Date"]).dt.date)["Sentiment"]
+            .apply(lambda x: (x == "negative").mean())
+        )
+        v_mean = daily_neg.mean()
+        v_std  = daily_neg.std()
+        verified_neg_threshold = min(0.70, round(v_mean + 1.5 * v_std, 3))
+    else:
+        verified_neg_threshold = 0.40
+
+    return {
+        "INFLUENCER_BURST_N":     inf_burst_n,
+        "VERIFIED_NEG_THRESHOLD": verified_neg_threshold,
+        "_actor_stats": {
+            "n_influencer_tweets": influencer_mask.sum(),
+            "n_verified_tweets":   verified_mask.sum(),
+            "verified_neg_mean":   round(v_mean, 3),
+            "verified_neg_std":    round(v_std, 3),
         },
     }
 
@@ -118,14 +164,17 @@ def _coordination_thresholds(df: pd.DataFrame) -> dict:
     ts = df.dropna(subset=["Date"])
 
     # --- synchronicité
-    bins = ts["Date"].dt.floor("5min")
+    bins = pd.to_datetime(ts["Date"]).dt.floor("5min")
     distinct = ts.groupby(bins)["X Author ID"].nunique()
     sync_threshold = int(distinct.quantile(0.95))
 
     # --- rapid-fire
     rf = ts.sort_values(["X Author ID", "Date"]).copy()
-    rf["_delta_s"] = rf.groupby("X Author ID")["Date"].diff().dt.total_seconds()
-    rapid_accounts_observed = int(rf[rf["_delta_s"] <= 60]["X Author ID"].nunique())
+    rf["_delta_s"] = (
+        rf.groupby("X Author ID")["Date"]
+        .transform(lambda x: pd.to_datetime(x).diff().dt.total_seconds())
+    )
+    rapid_accounts_observed = rf[rf["_delta_s"] <= 60]["X Author ID"].nunique()
     rf_threshold = max(1, int(ts["X Author ID"].nunique() * 0.01))
 
     # --- copy-paste (hors retweets)
@@ -134,7 +183,7 @@ def _coordination_thresholds(df: pd.DataFrame) -> dict:
     cp = cp[cp[text_col].str.len() >= 30]
     if len(cp):
         cross = cp.groupby(text_col)["X Author ID"].nunique()
-        cp_clusters_observed = int((cross >= 2).sum())
+        cp_clusters_observed = (cross >= 2).sum()
     else:
         cp_clusters_observed = 0
 
@@ -142,15 +191,15 @@ def _coordination_thresholds(df: pd.DataFrame) -> dict:
     recent_proxy = int(df["X Posts"].quantile(0.10)) if "X Posts" in df.columns else 100
 
     return {
-        "SYNC_BURST_AUTHORS_THRESHOLD":   sync_threshold,
-        "RAPID_FIRE_ACCOUNTS_THRESHOLD":  rf_threshold,
-        "COPY_PASTE_CLUSTERS_THRESHOLD":  1,
+        "SYNC_BURST_AUTHORS_THRESHOLD":    sync_threshold,
+        "RAPID_FIRE_ACCOUNTS_THRESHOLD":   rf_threshold,
+        "COPY_PASTE_CLUSTERS_THRESHOLD":   1,
         "RECENT_ACCOUNTS_POSTS_THRESHOLD": recent_proxy,
         "_coordination_stats": {
-            "sync_p95_authors":              sync_threshold,
-            "rapid_fire_accounts_observed":  rapid_accounts_observed,
-            "copy_paste_clusters_observed":  cp_clusters_observed,
-            "recent_account_proxy_posts":    recent_proxy,
+            "sync_p95_authors":             sync_threshold,
+            "rapid_fire_accounts_observed": rapid_accounts_observed,
+            "copy_paste_clusters_observed": cp_clusters_observed,
+            "recent_account_proxy_posts":   recent_proxy,
         },
     }
 
@@ -192,6 +241,7 @@ def compute_thresholds(
     thresholds.update(_viral_thresholds(df))
     thresholds.update(_rt_thresholds(df))
     thresholds.update(_coordination_thresholds(df))
+    thresholds.update(_actor_thresholds(df))
     thresholds["_corpus_stats"] = {
         "dataset_hash": dh,
         "n_tweets":     len(df),

@@ -176,6 +176,7 @@ Seuils calculés automatiquement :
 - **Volume** : `mean + 2σ` sur la distribution journalière (granularité `daily` / `weekly` / `monthly` selon la durée du corpus)
 - **Viraux** : percentile p90 sur Likes non-nuls, p75 sur Shares non-nuls
 - **Coordination** : synchronicité p95, seuil rapid-fire 1% des auteurs, copy-paste inter-comptes
+- **Acteurs** : seuil d'influencer burst (p90 influenceurs distincts/30min), cascade sentiment vérifiés (mean+1.5σ)
 
 Pour inspecter ou forcer un recalcul :
 
