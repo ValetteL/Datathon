@@ -302,14 +302,14 @@ def run_veille(state: CrisisState) -> CrisisState:
         "max_daily_volume":             int(daily_vol.max()),   # type: ignore[arg-type]
         "max_hourly_volume":            int(hourly_vol.max()),  # type: ignore[arg-type]
         "coordination_alert":           coord_alert,
-        "sync_burst_windows":           coord_signals["sync_burst_windows"],
-        "rapid_fire_accounts":          coord_signals["rapid_fire_accounts"],
-        "copy_paste_clusters":          coord_signals["copy_paste_clusters"],
+        "sync_burst_windows":           int(coord_signals["sync_burst_windows"]),
+        "rapid_fire_accounts":          int(coord_signals["rapid_fire_accounts"]),
+        "copy_paste_clusters":          int(coord_signals["copy_paste_clusters"]),
         "influencer_burst_alert":       inf_burst_alert,
-        "influencer_burst_days":        actor_signals["influencer_burst_days"],
-        "influencer_burst_max_count":   actor_signals["influencer_burst_max_count"],
+        "influencer_burst_days":        int(actor_signals["influencer_burst_days"]),
+        "influencer_burst_max_count":   int(actor_signals["influencer_burst_max_count"]),
         "verified_neg_alert":           verified_neg_alert,
-        "verified_neg_ratio":           actor_signals["verified_neg_ratio"],
+        "verified_neg_ratio":           float(actor_signals["verified_neg_ratio"]),
         "rt_persistence_days":          len(rt_persistence_days),
         "thresholds_granularity":       thresholds["_corpus_stats"]["granularity"],
     }
