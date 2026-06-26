@@ -142,9 +142,9 @@ Préparer 2-3 exemples de tweets par narratif — ils serviront à calibrer l'Ag
 
 ---
 
-## 5. Architecture technique mise en place (J1)
+## 5. Architecture technique
 
-Le pipeline LangGraph est câblé et l'AgentVeille est opérationnel. Les agents d'analyse et de réponse sont à implémenter en J2 par Ruben et Baptiste.
+Pipeline complet implémenté. Tous les agents sont opérationnels et exposés via une API FastAPI. Une interface React permet de piloter le pipeline et de consulter les sessions passées.
 
 ```
 load_corpus() → CrisisState → AgentAnalyste → AgentVeille → [HumanGate] → AgentStratège → AgentRédacteur → outputs/
@@ -152,20 +152,20 @@ load_corpus() → CrisisState → AgentAnalyste → AgentVeille → [HumanGate] 
 
 | Composant | Fichier | Statut |
 |---|---|---|
-| Chargeur corpus | `tools/corpus_loader.py` | ✅ Implémenté |
-| État partagé | `pipeline/state.py` | ✅ Implémenté |
-| Orchestrateur | `pipeline/graph.py` | ✅ Câblé — imports conditionnels |
-| AgentVeille | `agents/veille.py` | ✅ Implémenté et testé |
-| AgentAnalyste | `agents/analyste.py` | ⬜ À créer — **Ruben (P3), J2** |
-| AgentStratège | `src/agents/stratege.py` | ✅ Implémenté — **Baptiste (P5)** |
-| AgentRédacteur | `src/agents/redacteur.py` | ✅ Implémenté — **Baptiste (P5)** |
-| HumanGate | `pipeline/graph.py` | ✅ Implémenté |
-| Neutralité éditoriale | `prompts/prompts.py` | ✅ Centralisée |
-| Demo interactive | `src/main.py` | ✅ Opérationnel (narratives mockées) |
+| Chargeur corpus | `backend/src/tools/corpus_loader.py` | ✅ Implémenté |
+| État partagé | `backend/src/pipeline/state.py` | ✅ Implémenté |
+| Persistance sessions | `backend/src/pipeline/session_store.py` | ✅ JSON sur disque (`outputs/`) |
+| AgentAnalyste | `backend/src/agents/analyste.py` | ✅ Implémenté — **Ruben (P3)** |
+| AgentVeille | `backend/src/agents/veille.py` | ✅ Implémenté et testé |
+| AgentStratège | `backend/src/agents/stratege.py` | ✅ Implémenté — **Baptiste (P5)** |
+| AgentRédacteur | `backend/src/agents/redacteur.py` | ✅ Implémenté — **Baptiste (P5)** |
+| API FastAPI | `backend/main.py` | ✅ 7 endpoints |
+| HumanGate | Interface React + `POST /analyse/rejeter` | ✅ Implémenté |
+| Interface React | `frontend/src/` | ✅ Pipeline complet avec sessions |
 
-> `pipeline/graph.py` utilise des imports conditionnels : le pipeline démarre sans erreur même si les agents J2 n'existent pas encore. Dès que Ruben ou Baptiste pousse son fichier sur le repo, le pipeline le charge automatiquement.
+**Lancement** : voir `backend/README.md` et `frontend/README.md`.
 
-### Contraintes d'architecture à respecter en J2
+### Contraintes d'architecture
 
 | Contrainte | Règle |
 |---|---|
@@ -174,7 +174,7 @@ load_corpus() → CrisisState → AgentAnalyste → AgentVeille → [HumanGate] 
 | LLM | Utiliser `get_llm()` depuis `prompts/prompts.py` — jamais de clé en dur dans le code |
 | Neutralité | `NEUTRALITY_SYSTEM_PROMPT` obligatoire dans chaque agent |
 | Anti-hallucination | `source_tweet_ids` obligatoire dans chaque output Pydantic |
-| Validation humaine | HumanGate déjà câblé dans le graphe — ne pas le contourner |
+| Validation humaine | HumanGate obligatoire avant AgentStratège — ne pas contourner |
 
 ---
 
