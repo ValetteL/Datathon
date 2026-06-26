@@ -60,4 +60,5 @@ class SessionDetail(BaseModel):
     status: str
     is_mock: bool
     alerts: dict | None
+    strategy_options: dict | None
     draft_response: dict | None

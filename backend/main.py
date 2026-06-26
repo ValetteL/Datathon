@@ -6,11 +6,22 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.schemas.requests import StrategeRequest, VeilleRequest, RedacteurRequest
-from src.schemas.responses import VeilleResponse, StrategeResponse, RedacteurResponse
+from src.schemas.responses import (
+    VeilleResponse,
+    StrategeResponse,
+    RedacteurResponse,
+    SessionSummary,
+    SessionDetail,
+)
 
 from src.tools.corpus_loader import load_corpus
 
-from src.pipeline.session_store import get_state, save_state
+from src.pipeline.session_store import (
+    get_state,
+    save_state,
+    list_sessions,
+    get_session,
+)
 from src.pipeline.state import CrisisState
 
 from src.agents.veille import run_veille
@@ -154,4 +165,28 @@ def analyse_redacteur(body: RedacteurRequest):
         run_id=body.run_id,
         versions=drafts["versions"],
         recommandation=drafts["recommandation"],
+    )
+
+
+@app.get("/sessions", response_model=list[SessionSummary])
+def sessions_list():
+    return list_sessions()
+
+
+@app.get("/sessions/{run_id}", response_model=SessionDetail)
+def session_detail(run_id: str):
+    try:
+        meta = get_session(run_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"run_id inconnu : {run_id}")
+
+    state = meta["state"]
+
+    return SessionDetail(
+        run_id=run_id,
+        status=meta["status"],
+        is_mock=state.get("narratives") is not None,
+        alerts=state.get("alerts"),
+        strategy_options=state.get("strategy_options"),
+        draft_response=state.get("draft_response"),
     )
