@@ -176,7 +176,10 @@ export function usePipeline() {
     }
   }, [])
 
-  const reset = useCallback(() => setState(initialState), [])
+  const reset = useCallback(() => {
+    setState(initialState)
+    void chargerSessions()
+  }, [chargerSessions])
 
   return {
     ...state,

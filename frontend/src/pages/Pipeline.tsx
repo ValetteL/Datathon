@@ -39,8 +39,8 @@ export default function Pipeline() {
     <div className="flex min-h-svh flex-col">
       {pipelineStarted && <StepIndicator status={status} />}
 
-      <header className="border-b border-[var(--border)] bg-[var(--bg)] px-6 py-5">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
+      <header className="border-b border-[var(--border)] bg-[var(--bg)] px-6 py-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="text-left">
             <h1 className="text-xl font-semibold text-[var(--text-h)]">
               Pipeline d'analyse de crise
@@ -59,7 +59,7 @@ export default function Pipeline() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-5 px-4 py-8">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-4">
         {error && <ErrorBanner error={error} onRetry={retry} />}
 
         {!pipelineStarted && (

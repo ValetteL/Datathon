@@ -7,7 +7,7 @@ interface RedacteurResultProps {
 
 export default function RedacteurResult({ data }: RedacteurResultProps) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-[var(--border)] p-5 text-left">
+    <section className="flex flex-col gap-4 rounded-xl border border-[var(--border)] p-4 text-left">
       <h2 className="text-xl font-semibold text-[var(--text-h)]">Versions du communiqué</h2>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

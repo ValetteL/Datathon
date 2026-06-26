@@ -9,7 +9,7 @@ interface VeilleResultProps {
 
 export default function VeilleResult({ data }: VeilleResultProps) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-[var(--border)] p-5 text-left">
+    <section className="flex flex-col gap-4 rounded-xl border border-[var(--border)] p-4 text-left">
       <MockBadge isMock={data.is_mock} />
 
       <div className="flex items-center justify-between">

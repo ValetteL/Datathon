@@ -13,7 +13,7 @@ interface StrategeResultProps {
 // US-05 : les 3 options de réponse proposées par l'AgentStratège
 export default function StrategeResult({ data }: StrategeResultProps) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border border-[var(--border)] p-5 text-left">
+    <section className="flex flex-col gap-4 rounded-xl border border-[var(--border)] p-4 text-left">
       <h2 className="text-xl font-semibold text-[var(--text-h)]">Options stratégiques</h2>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
