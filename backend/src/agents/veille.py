@@ -85,8 +85,8 @@ def _compute_coordination_signals(df: pd.DataFrame, thresholds: dict) -> dict:
     return {
         "sync_burst_windows":     len(sync_bursts),
         "sync_burst_max_authors": int(sync_bursts.max()) if len(sync_bursts) else 0,
-        "rapid_fire_accounts":    rapid_accounts,
-        "copy_paste_clusters":    cp_clusters,
+        "rapid_fire_accounts":    int(rapid_accounts),  # type: ignore[arg-type]
+        "copy_paste_clusters":    int(cp_clusters),     # type: ignore[arg-type]
         "coordination_alert": (
             len(sync_bursts) > 0
             or rapid_accounts > rf_threshold
@@ -109,7 +109,7 @@ def _compute_actor_signals(df: pd.DataFrame, thresholds: dict) -> dict:
         daily_inf  = inf_df.groupby(pd.to_datetime(inf_df["Date"]).dt.date)["X Author ID"].nunique()
         active     = daily_inf[daily_inf >= thresholds["INFLUENCER_BURST_N"]]
         inf_burst_days      = len(active)
-        inf_burst_max_count = active.max() if len(active) else 0
+        inf_burst_max_count = int(active.max()) if len(active) else 0  # type: ignore[arg-type]
 
     # Signal 2 — Verified sentiment cascade
     ver_df             = df[verified_mask].dropna(subset=["Date"])
@@ -299,8 +299,8 @@ def run_veille(state: CrisisState) -> CrisisState:
     result.threshold_breaches = {
         "peak_days_count":              len(peak_days),
         "viral_tweets_count":           len(viral_tweets),
-        "max_daily_volume":             int(daily_vol.max()),
-        "max_hourly_volume":            int(hourly_vol.max()),
+        "max_daily_volume":             int(daily_vol.max()),   # type: ignore[arg-type]
+        "max_hourly_volume":            int(hourly_vol.max()),  # type: ignore[arg-type]
         "coordination_alert":           coord_alert,
         "sync_burst_windows":           int(coord_signals["sync_burst_windows"]),
         "rapid_fire_accounts":          int(coord_signals["rapid_fire_accounts"]),
