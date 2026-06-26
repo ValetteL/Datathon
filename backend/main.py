@@ -2,8 +2,9 @@ import uuid
 from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from src.schemas.requests import StrategeRequest, VeilleRequest, RedacteurRequest
 from src.schemas.responses import (
@@ -48,6 +49,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": type(exc).__name__,
+            "detail": str(exc),
+        },
+    )
 
 
 @app.get("/")
