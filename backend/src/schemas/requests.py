@@ -2,10 +2,13 @@ from pydantic import BaseModel
 from src.utils.config import corpus_config
 
 
-class VeilleRequest(BaseModel):
+class AnalysteRequest(BaseModel):
     sample_size: int = 200
     corpus_config: dict = corpus_config
-    narratives_mock: dict | None = None
+
+
+class VeilleRequest(BaseModel):
+    run_id: str
 
 
 class StrategeRequest(BaseModel):

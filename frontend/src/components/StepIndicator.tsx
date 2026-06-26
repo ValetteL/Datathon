@@ -1,6 +1,7 @@
 type StepState = 'pending' | 'active' | 'done'
 
 const STEPS = [
+  { key: 'analyste', label: 'Analyste' },
   { key: 'veille', label: 'Veille' },
   { key: 'human', label: 'Validation' },
   { key: 'stratege', label: 'Stratège' },
@@ -9,6 +10,8 @@ const STEPS = [
 
 const STATUS_ORDER = [
   'idle',
+  'loading_analyste',
+  'analyste_done',
   'loading_veille',
   'veille_done',
   'awaiting_human',
@@ -30,6 +33,7 @@ function computeStepStates(status: string): Record<(typeof STEPS)[number]['key']
   }
 
   return {
+    analyste: stepFor('analyste_done', 'loading_analyste'),
     veille: stepFor('veille_done', 'loading_veille'),
     human: status === 'rejected' ? 'done' : stepFor('awaiting_human', 'awaiting_human'),
     stratege: stepFor('stratege_done', 'loading_stratege'),

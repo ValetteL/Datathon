@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import AnalysteResult from '../components/AnalysteResult'
 import ErrorBanner from '../components/ErrorBanner'
 import HumanGate from '../components/HumanGate'
 import Loader from '../components/Loader'
@@ -12,6 +13,7 @@ import { usePipeline } from '../hooks/usePipeline'
 export default function Pipeline() {
   const {
     status,
+    analyste,
     veille,
     stratege,
     redacteur,
@@ -86,7 +88,11 @@ export default function Pipeline() {
           </>
         )}
 
-        {status === 'loading_veille' && <Loader label="Analyse de la veille en cours…" />}
+        {status === 'loading_analyste' && <Loader label="Classification des tweets en cours…" />}
+
+        {analyste && status !== 'idle' && <AnalysteResult data={analyste} />}
+
+        {status === 'loading_veille' && <Loader label="Détection des alertes et des pics…" />}
 
         {veille && (status === 'awaiting_human' || status === 'loading_stratege') && (
           <VeilleResult data={veille} />

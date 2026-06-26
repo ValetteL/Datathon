@@ -15,6 +15,14 @@ export type SessionStatus =
   | 'complete'
   | 'rejected'
 
+export interface AnalysteResultData {
+  run_id: string
+  narratif_dominant: string
+  repartition: Record<string, number>
+  tweet_count: number
+  errors: string[]
+}
+
 export interface Peak {
   date: string
   tweet_count: number
@@ -72,7 +80,7 @@ export interface SessionSummary {
 export interface SessionDetail {
   run_id: string
   status: string
-  is_mock: boolean
+  narratives: Record<string, unknown> | null
   alerts: Record<string, unknown> | null
   strategy_options: Record<string, unknown> | null
   draft_response: Record<string, unknown> | null

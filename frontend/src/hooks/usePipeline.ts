@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import {
+  lancerAnalyste,
   lancerRedacteur,
   lancerStratege,
   lancerVeille,
@@ -9,6 +10,7 @@ import {
   type PipelineStep,
 } from '../api/client'
 import type {
+  AnalysteResultData,
   RedacteurResultData,
   SessionDetail,
   SessionSummary,
@@ -24,6 +26,7 @@ export interface PipelineError {
 export interface PipelineState {
   status: string
   runId: string | null
+  analyste: AnalysteResultData | null
   veille: VeilleResultData | null
   stratege: StrategeResultData | null
   redacteur: RedacteurResultData | null
@@ -32,17 +35,35 @@ export interface PipelineState {
   sessionsLoading: boolean
 }
 
-const LOADING_STATUSES = ['loading_veille', 'loading_stratege', 'loading_redacteur']
+const LOADING_STATUSES = [
+  'loading_analyste',
+  'loading_veille',
+  'loading_stratege',
+  'loading_redacteur',
+]
 
 const initialState: PipelineState = {
   status: 'idle',
   runId: null,
+  analyste: null,
   veille: null,
   stratege: null,
   redacteur: null,
   error: null,
   sessions: [],
   sessionsLoading: false,
+}
+
+function analysteFromDetail(detail: SessionDetail): AnalysteResultData | null {
+  if (!detail.narratives) return null
+  const src = detail.narratives['source_tweet_ids'] as string[] | undefined
+  return {
+    run_id: detail.run_id,
+    narratif_dominant: detail.narratives['narratif_dominant'] as string,
+    repartition: (detail.narratives['repartition'] ?? {}) as Record<string, number>,
+    tweet_count: src?.length ?? 0,
+    errors: [],
+  }
 }
 
 function veilleFromDetail(detail: SessionDetail): VeilleResultData | null {
@@ -54,7 +75,7 @@ function veilleFromDetail(detail: SessionDetail): VeilleResultData | null {
     peaks: (detail.alerts['peaks'] ?? []) as VeilleResultData['peaks'],
     summary: detail.alerts['summary'] as string,
     threshold_breaches: (detail.alerts['threshold_breaches'] ?? {}) as Record<string, unknown>,
-    is_mock: detail.is_mock,
+    is_mock: false,
   }
 }
 
@@ -82,30 +103,25 @@ export function usePipeline() {
 
   const isLoading = LOADING_STATUSES.includes(state.status)
 
-  // US-01 : lancer l'analyse de Veille
   const lancerAnalyse = useCallback(async () => {
-    if (LOADING_STATUSES.includes(state.status)) return // garde anti double-clic
-    setState((s) => ({ ...s, status: 'loading_veille', error: null }))
+    if (LOADING_STATUSES.includes(state.status)) return
+    setState((s) => ({ ...s, status: 'loading_analyste', error: null }))
     try {
-      const veille = await lancerVeille()
-      setState((s) => ({
-        ...s,
-        status: 'veille_done',
-        runId: veille.run_id,
-        veille,
-      }))
-      // Une fois la Veille affichée, on attend la décision humaine.
-      setState((s) => ({ ...s, status: 'awaiting_human' }))
+      const analyste = await lancerAnalyste()
+      setState((s) => ({ ...s, status: 'analyste_done', runId: analyste.run_id, analyste }))
+
+      setState((s) => ({ ...s, status: 'loading_veille' }))
+      const veille = await lancerVeille(analyste.run_id)
+      setState((s) => ({ ...s, status: 'awaiting_human', veille }))
     } catch (error) {
       setState((s) => ({
         ...s,
         status: 'idle',
-        error: toPipelineError(error, 'veille'),
+        error: toPipelineError(error, 'analyste'),
       }))
     }
   }, [state.status])
 
-  // US-04 : validation humaine
   const valider = useCallback(async () => {
     if (!state.runId || isLoading) return
     setState((s) => ({ ...s, status: 'loading_stratege', error: null }))
@@ -129,7 +145,6 @@ export function usePipeline() {
     setState((s) => ({ ...s, status: 'rejected' }))
   }, [isLoading])
 
-  // US-09 : liste des sessions précédentes
   const chargerSessions = useCallback(async () => {
     setState((s) => ({ ...s, sessionsLoading: true }))
     try {
@@ -144,12 +159,11 @@ export function usePipeline() {
     }
   }, [])
 
-  // US-08 : retry de l'étape en erreur uniquement
   const retry = useCallback(() => {
     if (!state.error) return
     const step = state.error.step
     setState((s) => ({ ...s, error: null }))
-    if (step === 'veille') {
+    if (step === 'analyste' || step === 'veille') {
       void lancerAnalyse()
     } else if (step === 'stratege' || step === 'redacteur') {
       void valider()
@@ -167,6 +181,7 @@ export function usePipeline() {
         ...s,
         runId: detail.run_id,
         status: detail.status,
+        analyste: analysteFromDetail(detail),
         veille: veilleFromDetail(detail),
         stratege: strategeFromDetail(detail),
         redacteur: redacteurFromDetail(detail),

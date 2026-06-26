@@ -18,7 +18,7 @@ from src.agents.redacteur import run_redacteur
 console = Console()
 load_dotenv()
 
-df = load_corpus("../../Dataset/data.xlsx")
+df = load_corpus("./Dataset/data.xlsx")
 
 state = CrisisState(
     raw_df=df,

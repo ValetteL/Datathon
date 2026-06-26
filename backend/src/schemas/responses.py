@@ -1,6 +1,14 @@
 from pydantic import BaseModel
 
 
+class AnalysteResponse(BaseModel):
+    run_id: str
+    narratif_dominant: str
+    repartition: dict
+    tweet_count: int
+    errors: list[str]
+
+
 class PeakResponse(BaseModel):
     date: str
     tweet_count: int
@@ -58,7 +66,7 @@ class SessionSummary(BaseModel):
 class SessionDetail(BaseModel):
     run_id: str
     status: str
-    is_mock: bool
+    narratives: dict | None
     alerts: dict | None
     strategy_options: dict | None
     draft_response: dict | None

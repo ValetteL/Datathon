@@ -143,6 +143,8 @@ def _compute_status(state: dict) -> str:
         return "awaiting_stratege"
     if state.get("alerts"):
         return "awaiting_human"
+    if state.get("narratives"):
+        return "analyste_done"
     return "idle"
 
 

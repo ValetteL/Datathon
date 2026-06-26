@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import type {
+  AnalysteResultData,
   RedacteurResultData,
   SessionDetail,
   SessionSummary,
@@ -13,7 +14,7 @@ export const apiClient = axios.create({ baseURL })
 
 // Nom de l'étape qui a échoué, utilisé pour afficher un message contextuel
 // et permettre un retry ciblé (US-08).
-export type PipelineStep = 'veille' | 'stratege' | 'redacteur' | 'sessions'
+export type PipelineStep = 'analyste' | 'veille' | 'stratege' | 'redacteur' | 'sessions'
 
 export class PipelineApiError extends Error {
   step: PipelineStep
@@ -48,9 +49,18 @@ apiClient.interceptors.response.use(
   (error) => Promise.reject(new Error(toMessage(error))),
 )
 
-export async function lancerVeille(): Promise<VeilleResultData> {
+export async function lancerAnalyste(): Promise<AnalysteResultData> {
   try {
-    const { data } = await apiClient.post<VeilleResultData>('/analyse/veille', {})
+    const { data } = await apiClient.post<AnalysteResultData>('/analyse/analyste', {})
+    return data
+  } catch (error) {
+    throw new PipelineApiError('analyste', toMessage(error))
+  }
+}
+
+export async function lancerVeille(runId: string): Promise<VeilleResultData> {
+  try {
+    const { data } = await apiClient.post<VeilleResultData>('/analyse/veille', { run_id: runId })
     return data
   } catch (error) {
     throw new PipelineApiError('veille', toMessage(error))

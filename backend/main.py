@@ -6,8 +6,9 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from src.schemas.requests import StrategeRequest, VeilleRequest, RedacteurRequest
+from src.schemas.requests import AnalysteRequest, StrategeRequest, VeilleRequest, RedacteurRequest
 from src.schemas.responses import (
+    AnalysteResponse,
     VeilleResponse,
     StrategeResponse,
     RedacteurResponse,
@@ -25,6 +26,7 @@ from src.pipeline.session_store import (
 )
 from src.pipeline.state import CrisisState
 
+from src.agents.analyste import run_analyste
 from src.agents.veille import run_veille
 from src.agents.stratege import run_stratege
 from src.agents.redacteur import run_redacteur
@@ -67,12 +69,12 @@ def root():
     return {"status": "ok", "tweets": len(df_global) if df_global is not None else 0}
 
 
-@app.post("/analyse/veille", response_model=VeilleResponse)
-def analyse_veille(body: VeilleRequest):
-    run_id = str(uuid.uuid4())[:8]
-
+@app.post("/analyse/analyste", response_model=AnalysteResponse)
+def analyse_analyste(body: AnalysteRequest):
     if df_global is None:
         raise HTTPException(status_code=500, detail="Aucune données chargé.")
+
+    run_id = str(uuid.uuid4())[:8]
 
     state = CrisisState(
         raw_df=df_global,
@@ -80,7 +82,7 @@ def analyse_veille(body: VeilleRequest):
             min(body.sample_size, len(df_global)), random_state=42
         ),
         corpus_config=body.corpus_config,
-        narratives=body.narratives_mock,
+        narratives=None,
         alerts=None,
         human_approved=False,
         strategy_options=None,
@@ -90,11 +92,51 @@ def analyse_veille(body: VeilleRequest):
     )
 
     try:
-        state = run_veille(state)
+        state = run_analyste(state)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
     save_state(run_id, dict(state))
+
+    narratives = state["narratives"]
+    if narratives is None:
+        raise HTTPException(
+            status_code=500, detail="AgentAnalyste n'a produit aucun résultat."
+        )
+
+    return AnalysteResponse(
+        run_id=run_id,
+        narratif_dominant=narratives["narratif_dominant"],
+        repartition=narratives["repartition"],
+        tweet_count=len(narratives["source_tweet_ids"]),
+        errors=state.get("errors") or [],
+    )
+
+
+@app.post("/analyse/veille", response_model=VeilleResponse)
+def analyse_veille(body: VeilleRequest):
+    if df_global is None:
+        raise HTTPException(status_code=500, detail="Aucune données chargé.")
+
+    try:
+        state = get_state(body.run_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"run_id inconnu : {body.run_id}")
+
+    if state.get("narratives") is None:
+        raise HTTPException(
+            status_code=400, detail="AgentAnalyste non exécuté sur ce run_id."
+        )
+
+    # raw_df n'est pas persisté sur disque — on le ré-injecte depuis le corpus chargé
+    state["raw_df"] = df_global
+
+    try:
+        state = run_veille(state)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    save_state(body.run_id, dict(state))
 
     alerts = state["alerts"]
     if alerts is None:
@@ -103,13 +145,13 @@ def analyse_veille(body: VeilleRequest):
         )
 
     return VeilleResponse(
-        run_id=run_id,
+        run_id=body.run_id,
         is_alert=alerts["is_alert"],
         alert_level=alerts["alert_level"],
         peaks=alerts["peaks"],
         summary=alerts["summary"],
         threshold_breaches=alerts["threshold_breaches"],
-        is_mock=body.narratives_mock is not None,
+        is_mock=False,
     )
 
 
@@ -197,7 +239,7 @@ def session_detail(run_id: str):
     return SessionDetail(
         run_id=run_id,
         status=meta["status"],
-        is_mock=state.get("narratives") is not None,
+        narratives=state.get("narratives"),
         alerts=state.get("alerts"),
         strategy_options=state.get("strategy_options"),
         draft_response=state.get("draft_response"),

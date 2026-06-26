@@ -1,6 +1,7 @@
 import type { PipelineError } from '../hooks/usePipeline'
 
 const STEP_LABELS: Record<PipelineError['step'], string> = {
+  analyste: 'Analyste',
   veille: 'Veille',
   stratege: 'Stratège',
   redacteur: 'Rédacteur',
