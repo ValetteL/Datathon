@@ -144,8 +144,8 @@ def _actor_thresholds(df: pd.DataFrame) -> dict:
         "INFLUENCER_BURST_N":     inf_burst_n,
         "VERIFIED_NEG_THRESHOLD": verified_neg_threshold,
         "_actor_stats": {
-            "n_influencer_tweets": influencer_mask.sum(),
-            "n_verified_tweets":   verified_mask.sum(),
+            "n_influencer_tweets": int(influencer_mask.sum()),  # type: ignore[arg-type]
+            "n_verified_tweets":   int(verified_mask.sum()),   # type: ignore[arg-type]
             "verified_neg_mean":   round(v_mean, 3),
             "verified_neg_std":    round(v_std, 3),
         },
@@ -174,7 +174,7 @@ def _coordination_thresholds(df: pd.DataFrame) -> dict:
         rf.groupby("X Author ID")["Date"]
         .transform(lambda x: pd.to_datetime(x).diff().dt.total_seconds())
     )
-    rapid_accounts_observed = rf[rf["_delta_s"] <= 60]["X Author ID"].nunique()
+    rapid_accounts_observed = int(rf[rf["_delta_s"] <= 60]["X Author ID"].nunique())
     rf_threshold = max(1, int(ts["X Author ID"].nunique() * 0.01))
 
     # --- copy-paste (hors retweets)
@@ -183,7 +183,7 @@ def _coordination_thresholds(df: pd.DataFrame) -> dict:
     cp = cp[cp[text_col].str.len() >= 30]
     if len(cp):
         cross = cp.groupby(text_col)["X Author ID"].nunique()
-        cp_clusters_observed = (cross >= 2).sum()
+        cp_clusters_observed = int((cross >= 2).sum())
     else:
         cp_clusters_observed = 0
 
@@ -228,10 +228,13 @@ def compute_thresholds(
     cache_path = cache_dir / f"thresholds_{dh}.json"
 
     if not force and cache_path.exists():
-        with open(cache_path, encoding="utf-8") as f:
-            cached = json.load(f)
-        if cached.get("_corpus_stats", {}).get("dataset_hash") == dh:
-            return cached
+        try:
+            with open(cache_path, encoding="utf-8") as f:
+                cached = json.load(f)
+            if cached.get("_corpus_stats", {}).get("dataset_hash") == dh:
+                return cached
+        except (json.JSONDecodeError, KeyError):
+            cache_path.unlink(missing_ok=True)
 
     span_days   = (df["Date"].max() - df["Date"].min()).days
     granularity = _choose_granularity(span_days)
