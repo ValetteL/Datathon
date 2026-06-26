@@ -2,24 +2,30 @@ from __future__ import annotations
 import pandas as pd
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from prompts.prompts import get_system_prompt, get_llm
-from pipeline.state import CrisisState
-from tools.thresholds import compute_thresholds
+from src.prompts.prompts import get_system_prompt, get_llm
+from src.pipeline.state import CrisisState
+from src.tools.thresholds import compute_thresholds
 
 
 class PeakEvent(BaseModel):
     date: str = Field(description="Date du pic (YYYY-MM-DD)")
     tweet_count: int = Field(description="Nombre de tweets ce jour-là")
     top_shares: int = Field(description="Valeur max de Shares ce jour-là")
-    source_tweet_ids: list[str] = Field(description="postIDs des tweets les plus partagés")
+    source_tweet_ids: list[str] = Field(
+        description="postIDs des tweets les plus partagés"
+    )
 
 
 class AlertSignal(BaseModel):
     is_alert: bool
     alert_level: str = Field(description="low | medium | high | critical")
     peaks: list[PeakEvent]
-    threshold_breaches: dict = Field(description="Métriques et valeurs ayant dépassé les seuils")
-    summary: str = Field(description="Synthèse factuelle de la dynamique de propagation")
+    threshold_breaches: dict = Field(
+        description="Métriques et valeurs ayant dépassé les seuils"
+    )
+    summary: str = Field(
+        description="Synthèse factuelle de la dynamique de propagation"
+    )
     source_tweet_ids: list[str]
 
 
@@ -299,9 +305,9 @@ def run_veille(state: CrisisState) -> CrisisState:
         "sync_burst_windows":           coord_signals["sync_burst_windows"],
         "rapid_fire_accounts":          coord_signals["rapid_fire_accounts"],
         "copy_paste_clusters":          coord_signals["copy_paste_clusters"],
-        "influencer_burst_alert":     inf_burst_alert,
-        "influencer_burst_days":      actor_signals["influencer_burst_days"],
-        "influencer_burst_max_count": actor_signals["influencer_burst_max_count"],
+        "influencer_burst_alert":       inf_burst_alert,
+        "influencer_burst_days":        actor_signals["influencer_burst_days"],
+        "influencer_burst_max_count":   actor_signals["influencer_burst_max_count"],
         "verified_neg_alert":           verified_neg_alert,
         "verified_neg_ratio":           actor_signals["verified_neg_ratio"],
         "rt_persistence_days":          len(rt_persistence_days),

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
-from pipeline.state import CrisisState
-from prompts.prompts import get_llm, get_system_prompt
+from src.pipeline.state import CrisisState
+from src.prompts.prompts import get_llm, get_system_prompt
 
 
 class DraftVersion(BaseModel):
@@ -47,7 +47,9 @@ def run_redacteur(state: CrisisState) -> CrisisState:
         ]
     )
 
-    result: DraftCommunique = (prompt | llm.with_structured_output(DraftCommunique)).invoke(
+    result: DraftCommunique = (
+        prompt | llm.with_structured_output(DraftCommunique)
+    ).invoke(
         {
             "evenement": config.get("evenement", ""),
             "narratif_dominant": narratives.get("narratif_dominant", ""),

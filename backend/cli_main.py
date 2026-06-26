@@ -7,17 +7,18 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from agents.analyste import run_analyste
-from agents.redacteur import run_redacteur
-from agents.stratege import run_stratege
-from agents.veille import run_veille
-from pipeline.state import CrisisState
-from tools.corpus_loader import load_corpus
+from src.tools.corpus_loader import load_corpus
+from src.pipeline.state import CrisisState
+from src.agents.veille import run_veille
+from src.agents.analyste import run_analyste
+from src.agents.stratege import run_stratege
+from src.agents.redacteur import run_redacteur
+
 
 console = Console()
 load_dotenv()
 
-df = load_corpus("Dataset/data.xlsx")
+df = load_corpus("./Dataset/data.xlsx")
 
 state = CrisisState(
     raw_df=df,
@@ -70,6 +71,8 @@ if state.get("errors"):
     console.print(
         f"[yellow]⚠ {len(state['errors'])} erreur(s) de batch — pipeline continue[/yellow]"
     )
+    for err in state["errors"]:
+        console.print(f"  [dim red]{err}[/dim red]")
 
 # ── Agent Veille ──────────────────────────────────────────────────────────────
 console.rule("[bold cyan]Agent Veille[/bold cyan]")

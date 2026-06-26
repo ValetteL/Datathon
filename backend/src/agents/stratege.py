@@ -1,7 +1,7 @@
 from langchain_core.prompts.chat import ChatPromptTemplate
 from pydantic import BaseModel, Field
-from pipeline.state import CrisisState
-from prompts.prompts import get_llm, get_system_prompt
+from src.pipeline.state import CrisisState
+from src.prompts.prompts import get_llm, get_system_prompt
 
 
 class ResponseOption(BaseModel):
@@ -46,7 +46,9 @@ def run_stratege(state: CrisisState) -> CrisisState:
         ]
     )
 
-    result: StrategyOptions = (prompt | llm.with_structured_output(StrategyOptions)).invoke(
+    result: StrategyOptions = (
+        prompt | llm.with_structured_output(StrategyOptions)
+    ).invoke(
         {
             "evenement": config.get("evenement", ""),
             "narratif_dominant": narratives.get("narratif_dominant", ""),
