@@ -17,7 +17,7 @@ from tools.corpus_loader import load_corpus
 console = Console()
 load_dotenv()
 
-df = load_corpus("Dataset/data.xlsx")
+df = load_corpus("../../Dataset/data.xlsx")
 
 state = CrisisState(
     raw_df=df,
