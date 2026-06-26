@@ -5,18 +5,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.schemas.requests import VeilleRequest
-from src.schemas.responses import VeilleResponse
+from src.schemas.requests import StrategeRequest, VeilleRequest
+from src.schemas.responses import VeilleResponse, StrategeResponse
 
 from src.tools.corpus_loader import load_corpus
 
-from src.pipeline.session_store import save_state
+from src.pipeline.session_store import get_state, save_state
 from src.pipeline.state import CrisisState
 
 from src.agents.veille import run_veille
-from src.agents.analyste import run_analyste
 from src.agents.stratege import run_stratege
-from src.agents.redacteur import run_redacteur
 
 load_dotenv()
 
@@ -88,4 +86,39 @@ def analyse_veille(body: VeilleRequest):
         summary=alerts["summary"],
         threshold_breaches=alerts["threshold_breaches"],
         is_mock=body.narratives_mock is not None,
+    )
+
+
+@app.post("/analyse/stratege", response_model=StrategeResponse)
+def analyse_stratege(body: StrategeRequest):
+    if not body.humain_approved:
+        raise HTTPException(
+            status_code=403, detail="human_approved est false — pipeline bloqué."
+        )
+
+    try:
+        state = get_state(body.run_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"run_id inconnu : {body.run_id}")
+
+    state["human_approved"] = True
+
+    try:
+        state = run_stratege(state)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    save_state(body.run_id, dict(state))
+
+    options = state["strategy_options"]
+    if options is None:
+        raise HTTPException(
+            status_code=500, detail="AgentStratège n'a produit aucune option."
+        )
+
+    return StrategeResponse(
+        run_id=body.run_id,
+        options=options["options"],
+        option_recommandee=options["option_recommandee"],
+        justification=options["justification"],
     )

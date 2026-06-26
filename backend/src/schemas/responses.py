@@ -4,7 +4,7 @@ from pydantic import BaseModel
 class PeakResponse(BaseModel):
     date: str
     tweet_count: int
-    top_share: int
+    top_shares: int
     source_tweet_ids: list[str]
 
 
@@ -27,11 +27,11 @@ class ResponseOptionResponse(BaseModel):
     source_tweet_ids: list[str]
 
 
-class StrateResponse(BaseModel):
+class StrategeResponse(BaseModel):
     run_id: str
     options: list[ResponseOptionResponse]
     option_recommandee: str
-    justificatin: str
+    justification: str
 
 
 class DraftVersionResponse(BaseModel):

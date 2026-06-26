@@ -1,4 +1,10 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.pipeline.state import CrisisState
 
 
 _store: dict = {}
@@ -11,7 +17,7 @@ def save_state(run_id: str, state: dict) -> None:
     _store[run_id]["status"] = _compute_status(state)
 
 
-def get_state(run_id: str) -> dict:
+def get_state(run_id: str) -> CrisisState:
     if run_id not in _store:
         raise KeyError(f"run_id inconnu : {run_id}")
     return _store[run_id]["state"]
