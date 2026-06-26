@@ -113,6 +113,13 @@ def get_session(run_id: str) -> dict:
     return _store[run_id]
 
 
+def mark_rejected(run_id: str) -> None:
+    if run_id not in _store:
+        raise KeyError(f"run_id inconnu : {run_id}")
+    _store[run_id]["status"] = "rejected"
+    _write_to_disk(run_id)
+
+
 def list_sessions() -> list:
     return sorted(
         [

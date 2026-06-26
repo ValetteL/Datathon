@@ -8,17 +8,22 @@ const STYLES: Record<AlertLevel, { label: string; classes: string }> = {
 }
 
 interface AlertBadgeProps {
-  level: AlertLevel
+  level: AlertLevel | string
+  compact?: boolean
 }
 
-export default function AlertBadge({ level }: AlertBadgeProps) {
-  const style = STYLES[level]
+export default function AlertBadge({ level, compact = false }: AlertBadgeProps) {
+  const style = STYLES[level as AlertLevel] ?? STYLES.low
   return (
     <span
       data-level={level}
-      className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium ${style.classes}`}
+      className={`inline-flex items-center rounded-full border font-medium ${
+        compact
+          ? 'px-2 py-0.5 text-xs'
+          : 'px-3 py-1 text-sm'
+      } ${style.classes}`}
     >
-      Niveau d'alerte : {style.label}
+      {compact ? style.label : `Niveau d'alerte : ${style.label}`}
     </span>
   )
 }

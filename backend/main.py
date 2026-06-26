@@ -23,6 +23,7 @@ from src.pipeline.session_store import (
     save_state,
     list_sessions,
     get_session,
+    mark_rejected,
 )
 from src.pipeline.state import CrisisState
 
@@ -153,6 +154,15 @@ def analyse_veille(body: VeilleRequest):
         threshold_breaches=alerts["threshold_breaches"],
         is_mock=False,
     )
+
+
+@app.post("/analyse/rejeter")
+def analyse_rejeter(body: RedacteurRequest):
+    try:
+        mark_rejected(body.run_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"run_id inconnu : {body.run_id}")
+    return {"run_id": body.run_id, "status": "rejected"}
 
 
 @app.post("/analyse/stratege", response_model=StrategeResponse)

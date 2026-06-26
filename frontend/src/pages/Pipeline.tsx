@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
+import AlertBadge from '../components/AlertBadge'
 import AnalysteResult from '../components/AnalysteResult'
+import CollapsibleCard from '../components/CollapsibleCard'
 import ErrorBanner from '../components/ErrorBanner'
 import HumanGate from '../components/HumanGate'
 import Loader from '../components/Loader'
@@ -36,6 +38,15 @@ export default function Pipeline() {
 
   const pipelineStarted = status !== 'idle'
   const isTerminal = status === 'complete' || status === 'rejected'
+
+  // Résumés pour les en-têtes repliés
+  const analyteSummary = analyste
+    ? `${analyste.narratif_dominant} dominant · ${analyste.tweet_count} tweets`
+    : ''
+  const veilleLevel = veille?.alert_level ?? 'low'
+  const veilleSummary = veille
+    ? `${veille.peaks.length} pic(s) · ${veille.summary.slice(0, 70)}…`
+    : ''
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -90,12 +101,31 @@ export default function Pipeline() {
 
         {status === 'loading_analyste' && <Loader label="Classification des tweets en cours…" />}
 
-        {analyste && status !== 'idle' && <AnalysteResult data={analyste} />}
+        {/* Analyste — toujours visible, replié automatiquement quand la veille arrive */}
+        {analyste && (
+          <CollapsibleCard
+            key={veille ? 'analyste-past' : 'analyste-current'}
+            defaultOpen={!veille}
+            title="Analyse des narratifs"
+            summary={analyteSummary}
+          >
+            <AnalysteResult data={analyste} />
+          </CollapsibleCard>
+        )}
 
         {status === 'loading_veille' && <Loader label="Détection des alertes et des pics…" />}
 
-        {veille && (status === 'awaiting_human' || status === 'loading_stratege') && (
-          <VeilleResult data={veille} />
+        {/* Veille — toujours visible après la détection, replié quand la stratégie arrive */}
+        {veille && (
+          <CollapsibleCard
+            key={stratege ? 'veille-past' : 'veille-current'}
+            defaultOpen={!stratege}
+            title="Résultats de la veille"
+            summary={veilleSummary}
+            badge={<AlertBadge level={veilleLevel} compact />}
+          >
+            <VeilleResult data={veille} />
+          </CollapsibleCard>
         )}
 
         {status === 'awaiting_human' && (

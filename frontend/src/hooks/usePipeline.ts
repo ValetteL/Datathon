@@ -6,6 +6,7 @@ import {
   lancerVeille,
   listerSessions,
   recupererSession,
+  rejeterSession,
   PipelineApiError,
   type PipelineStep,
 } from '../api/client'
@@ -143,7 +144,8 @@ export function usePipeline() {
   const rejeter = useCallback(() => {
     if (isLoading) return
     setState((s) => ({ ...s, status: 'rejected' }))
-  }, [isLoading])
+    if (state.runId) void rejeterSession(state.runId)
+  }, [isLoading, state.runId])
 
   const chargerSessions = useCallback(async () => {
     setState((s) => ({ ...s, sessionsLoading: true }))

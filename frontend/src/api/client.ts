@@ -93,6 +93,14 @@ export async function lancerRedacteur(runId: string): Promise<RedacteurResultDat
   }
 }
 
+export async function rejeterSession(runId: string): Promise<void> {
+  try {
+    await apiClient.post('/analyse/rejeter', { run_id: runId })
+  } catch {
+    // échec silencieux — l'état local est déjà marqué rejected
+  }
+}
+
 export async function listerSessions(): Promise<SessionSummary[]> {
   try {
     const { data } = await apiClient.get<SessionSummary[]>('/sessions')
